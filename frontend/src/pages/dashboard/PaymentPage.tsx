@@ -13,7 +13,10 @@ import {
   ArrowLeft,
   Lock,
   User as UserIcon,
+  CalendarPlus,
+  CheckCircle,
 } from "lucide-react";
+import { generateBookingCalendarUrl } from "../../utils/calendarUtils";
 
 type Method = "credit" | "debit" | "upi" | "paypal";
 
@@ -52,6 +55,7 @@ const PaymentPage: React.FC = () => {
   const [checkout, setCheckout] = useState<CheckoutData | null>(null);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -134,8 +138,7 @@ const PaymentPage: React.FC = () => {
         payment_id: paymentId,
       });
 
-      alert("Payment successful ");
-      navigate(`/dashboard/payment/receipt/${paymentId}`);
+      setPaymentSuccess(true);
     } catch (err: any) {
       console.error("Payment failed:", err?.response?.data || err);
       alert("Payment failed. Please try again.");
@@ -155,6 +158,65 @@ const PaymentPage: React.FC = () => {
             className="mt-6 px-6 py-3 rounded-xl bg-black text-white font-semibold"
           >
             Go to Book Now
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate end time (30 min from start) for calendar
+  const endTimeForCalendar = data?.startTime
+    ? new Date(new Date(data.startTime).getTime() + 30 * 60 * 1000).toISOString()
+    : "";
+
+  const handleAddToCalendar = () => {
+    if (checkout && data?.startTime && endTimeForCalendar) {
+      const calendarUrl = generateBookingCalendarUrl(
+        checkout.service_name,
+        data.startTime,
+        endTimeForCalendar,
+        checkout.booking_id
+      );
+      window.open(calendarUrl, "_blank");
+    }
+  };
+
+  if (paymentSuccess && checkout) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-beige-100 via-white to-beige-200">
+        <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md text-center">
+          <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
+          <p className="text-gray-600 mb-6">
+            Your booking for <span className="font-semibold">{checkout.service_name}</span> has been confirmed.
+          </p>
+
+          <div className="p-4 bg-gray-50 rounded-xl mb-6 text-left">
+            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+              <CalendarDays className="w-4 h-4" />
+              <span>{prettyDate} at {prettyTime}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Receipt className="w-4 h-4" />
+              <span>Booking #{checkout.booking_id}</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleAddToCalendar}
+            className="w-full py-3 px-6 rounded-xl font-bold bg-black text-white hover:bg-gray-800 transition-all flex items-center justify-center gap-2 mb-3"
+          >
+            <CalendarPlus className="w-5 h-5" />
+            Add to Google Calendar
+          </button>
+
+          <button
+            onClick={() => navigate("/dashboard/my-bookings")}
+            className="w-full py-3 px-6 rounded-xl font-semibold border border-gray-300 hover:bg-gray-50 transition-all"
+          >
+            View My Bookings
           </button>
         </div>
       </div>

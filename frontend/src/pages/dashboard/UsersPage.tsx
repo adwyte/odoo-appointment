@@ -43,6 +43,7 @@ export default function UsersPage() {
   const [formData, setFormData] = useState<UserFormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
   const [appointmentCount, setAppointmentCount] = useState(0);
+  const [resourceCount, setResourceCount] = useState(0);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
 
   const fetchUsers = async () => {
@@ -128,6 +129,7 @@ export default function UsersPage() {
       setShowDeleteModal(false);
       setSelectedUser(null);
       setAppointmentCount(0);
+      setResourceCount(0);
       fetchUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete user");
@@ -157,8 +159,10 @@ export default function UsersPage() {
     try {
       const result = await api.getUserAppointmentCount(user.id);
       setAppointmentCount(result.appointment_count);
+      setResourceCount(result.resource_count || 0);
     } catch {
       setAppointmentCount(0);
+      setResourceCount(0);
     } finally {
       setLoadingAppointments(false);
     }
@@ -517,6 +521,23 @@ export default function UsersPage() {
                       </p>
                     </div>
                   )}
+                  {resourceCount > 0 && (
+                    <div className="resource-warning" style={{
+                      background: "#dbeafe",
+                      border: "1px solid #3b82f6",
+                      borderRadius: "8px",
+                      padding: "12px",
+                      marginTop: "12px",
+                      marginBottom: "12px"
+                    }}>
+                      <p style={{ color: "#1e40af", fontWeight: 600, marginBottom: "4px" }}>
+                        ℹ️ Note: This user is linked to {resourceCount} resource(s)
+                      </p>
+                      <p style={{ color: "#1e40af", fontSize: "14px" }}>
+                        These resources will be unlinked but not deleted.
+                      </p>
+                    </div>
+                  )}
                   <p className="text-sm text-gray-500">
                     This action cannot be undone. All data associated with this
                     user will be permanently removed.
@@ -536,7 +557,7 @@ export default function UsersPage() {
                 onClick={handleDeleteUser}
                 disabled={submitting || loadingAppointments}
               >
-                {submitting ? "Deleting..." : appointmentCount > 0 ? "Delete User & Appointments" : "Delete User"}
+                {submitting ? "Deleting..." : (appointmentCount > 0 || resourceCount > 0) ? "Delete User & Data" : "Delete User"}
               </button>
             </div>
           </div>

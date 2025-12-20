@@ -135,11 +135,11 @@ export const api = {
     }
   },
 
-  async getUserAppointmentCount(id: number): Promise<{ appointment_count: number }> {
+  async getUserAppointmentCount(id: number): Promise<{ appointment_count: number; resource_count: number; total_references: number }> {
     const res = await fetch(`${API_BASE_URL}/api/users/${id}/appointments/count`, {
       headers: authHeaders(),
     });
-    if (!res.ok) return { appointment_count: 0 };
+    if (!res.ok) return { appointment_count: 0, resource_count: 0, total_references: 0 };
     return res.json();
   },
 

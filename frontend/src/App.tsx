@@ -16,6 +16,7 @@ import ReportsPage from "./pages/dashboard/ReportsPage";
 import AppointmentBooking from "./components/AppointmentBooking";
 import MyBookings from "./components/MyBookings";
 import CreateService from "./pages/organiser/CreateService";
+import OrganiserCalendar from "./pages/organiser/OrganiserCalendar";
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="p-6">
@@ -82,7 +83,7 @@ export default function App() {
           <Route path="services/create" element={<CreateService />} />
           <Route path="bookings" element={<PlaceholderPage title="Bookings" />} />
           <Route path="availability" element={<PlaceholderPage title="Availability Settings" />} />
-          <Route path="calendar" element={<PlaceholderPage title="Calendar View" />} />
+          <Route path="calendar" element={<OrganiserCalendar />} />
           <Route path="reports" element={<PlaceholderPage title="Reports" />} />
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
         </Route>

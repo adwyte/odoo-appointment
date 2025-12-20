@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Calendar, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, CalendarPlus } from 'lucide-react';
+import { generateBookingCalendarUrl } from '../utils/calendarUtils';
 
 interface Booking {
     id: number;
@@ -154,6 +155,23 @@ const MyBookings: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
+                                                {booking.status.toLowerCase() === 'confirmed' && (
+                                                    <button
+                                                        onClick={() => {
+                                                            const calendarUrl = generateBookingCalendarUrl(
+                                                                booking.service_name,
+                                                                booking.start_time,
+                                                                booking.end_time,
+                                                                booking.id
+                                                            );
+                                                            window.open(calendarUrl, '_blank');
+                                                        }}
+                                                        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-gray-700"
+                                                        title="Add to Google Calendar"
+                                                    >
+                                                        <CalendarPlus className="w-5 h-5" />
+                                                    </button>
+                                                )}
                                                 {getStatusIcon(booking.status)}
                                                 <span className={getStatusBadge(booking.status)}>
                                                     {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
