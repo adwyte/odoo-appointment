@@ -3,7 +3,8 @@ import { Users, Calendar, UserCog, TrendingUp, RefreshCw } from "lucide-react";
 import StatCard from "../../components/ui/StatCard";
 import DataTable from "../../components/ui/DataTable";
 import Badge from "../../components/ui/Badge";
-import { api, User, UserStats } from "../../services/api";
+import { api } from "../../services/api";
+import type { User, UserStats } from "../../services/api";
 
 interface DisplayUser {
   id: number;
