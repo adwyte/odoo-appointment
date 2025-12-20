@@ -18,18 +18,15 @@ DATABASE_URL = os.getenv(
     "postgresql+psycopg2://postgres:Sansku%23062005@localhost:5432/odoo_appointment"
 )
 
+from app.database import get_db
+
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# =====================
-# APP
-# =====================
 
 app = FastAPI(title="UrbanCare API", version="1.0.0")
 
@@ -45,20 +42,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routers
 app.include_router(appointments.router, prefix="/api")
 app.include_router(auth.router)
-
-# =====================
-# DEPENDENCY
-# =====================
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # =====================
 # SECURITY UTILS
