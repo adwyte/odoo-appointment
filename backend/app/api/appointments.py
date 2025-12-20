@@ -5,7 +5,7 @@ from typing import List
 
 from app.database import get_db
 from app.models.models import Booking, AppointmentType, Slot, BookingStatus, User, UserRole
-from app.schemas.appointment import SlotOut, BookingCreate, BookingOut, BookingListOut
+from app.schemas.appointment import SlotOut, BookingCreate, BookingOut
 
 router = APIRouter()
 
@@ -119,11 +119,7 @@ def create_booking(
     )
 
 
-<<<<<<< HEAD
-@router.get("/bookings", response_model=List[BookingListOut])
-=======
 @router.get("/bookings")
->>>>>>> b2067bc (Add search feature, real upcoming bookings, remove sidebar Book Now, add GET /bookings API)
 def get_bookings(
     customer_email: str = Query(..., description="Customer email to fetch bookings for"),
     db: Session = Depends(get_db)
@@ -131,11 +127,6 @@ def get_bookings(
     """
     Get all bookings for a customer by email.
     """
-<<<<<<< HEAD
-    from app.schemas.appointment import BookingListOut
-    
-=======
->>>>>>> b2067bc (Add search feature, real upcoming bookings, remove sidebar Book Now, add GET /bookings API)
     # Find customer
     customer = db.query(User).filter(User.email == customer_email).first()
     if not customer:
@@ -153,16 +144,6 @@ def get_bookings(
             AppointmentType.id == booking.appointment_type_id
         ).first()
         
-<<<<<<< HEAD
-        result.append(BookingListOut(
-            id=booking.id,
-            service_name=appt_type.name if appt_type else "Unknown Service",
-            start_time=booking.start_time,
-            end_time=booking.end_time,
-            status=booking.status.value,
-            created_at=None  # Booking model doesn't have created_at
-        ))
-=======
         result.append({
             "id": booking.id,
             "service_name": appt_type.name if appt_type else "Unknown Service",
@@ -170,6 +151,5 @@ def get_bookings(
             "end_time": booking.end_time.isoformat(),
             "status": booking.status.value
         })
->>>>>>> b2067bc (Add search feature, real upcoming bookings, remove sidebar Book Now, add GET /bookings API)
     
     return result
