@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
 interface Slot {
@@ -10,6 +11,10 @@ interface Slot {
 }
 
 const AppointmentBooking: React.FC = () => {
+    const [searchParams] = useSearchParams();
+    const serviceId = parseInt(searchParams.get('serviceId') || '1');
+    const serviceName = searchParams.get('serviceName') || 'General Consultation';
+
     const [currentStep, setCurrentStep] = useState<number>(1);
     const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [slots, setSlots] = useState<Slot[]>([]);
@@ -18,8 +23,6 @@ const AppointmentBooking: React.FC = () => {
     const [customerName, setCustomerName] = useState<string>('');
     const [customerEmail, setCustomerEmail] = useState<string>('');
     const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
-
-    const appointmentTypeId = 1;
 
     useEffect(() => {
         if (currentStep === 2) {
@@ -32,7 +35,7 @@ const AppointmentBooking: React.FC = () => {
         setSlots([]);
         try {
             const response = await axios.get<Slot[]>(`http://localhost:8000/api/slots`, {
-                params: { date: selectedDate, appointment_type_id: appointmentTypeId }
+                params: { date: selectedDate, appointment_type_id: serviceId }
             });
             setSlots(response.data);
         } catch (error) {
@@ -52,7 +55,7 @@ const AppointmentBooking: React.FC = () => {
 
         try {
             await axios.post('http://localhost:8000/api/bookings', {
-                appointment_type_id: appointmentTypeId,
+                appointment_type_id: serviceId,
                 start_time: selectedSlot.start_time,
                 customer_name: customerName,
                 customer_email: customerEmail
@@ -89,6 +92,7 @@ const AppointmentBooking: React.FC = () => {
                         </svg>
                     </div>
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
+                    <p className="text-gray-600 mb-2">{serviceName}</p>
                     <p className="text-gray-600 mb-6">Your appointment has been successfully booked.</p>
                     <p className="text-lg font-semibold text-black">{formatTime(selectedSlot!.start_time)} on {selectedDate}</p>
                 </div>
@@ -106,7 +110,7 @@ const AppointmentBooking: React.FC = () => {
 
                     <div className="relative z-10">
                         <span className="inline-block py-1 px-3 rounded-full bg-white/20 text-xs font-semibold tracking-wider mb-4 border border-white/10">URBANCARE</span>
-                        <h1 className="text-4xl font-extrabold tracking-tight leading-tight">Book Your<br />Session</h1>
+                        <h1 className="text-4xl font-extrabold tracking-tight leading-tight">Book<br />{serviceName}</h1>
                         <p className="mt-4 text-gray-300 text-sm leading-relaxed">
                             Experience world-class service. Follow the steps to complete your booking.
                         </p>

@@ -4,9 +4,6 @@ from app.models.models import Base, User, AppointmentType, Resource, Schedule, U
 from datetime import time
 import sys
 
-# Create tables if they don't exist (though alembic should have done this)
-# Base.metadata.create_all(bind=engine)
-
 def seed():
     db = SessionLocal()
     try:
@@ -16,7 +13,7 @@ def seed():
             print("Creating organiser...")
             organiser = User(
                 email="org@example.com",
-                password_hash="hashed_secret", # In real app, hash this!
+                password_hash="hashed_secret",
                 full_name="Dr. House",
                 role=UserRole.ORGANISER
             )
@@ -24,23 +21,31 @@ def seed():
             db.commit()
             db.refresh(organiser)
 
-        # 2. Create Appointment Type (Service) - This has ID 1
-        service = db.query(AppointmentType).filter(AppointmentType.id == 1).first()
-        if not service:
-            print("Creating Appointment Type (General Consultation)...")
-            service = AppointmentType(
-                id=1, # Force ID 1 as frontend expects it
-                name="General Consultation",
-                description="Standard checkup",
-                duration_minutes=30,
-                is_published=True,
-                owner_id=organiser.id,
-                max_bookings_per_slot=3
-            )
-            db.add(service)
-            db.commit()
-        else:
-            print("Appointment Type already exists.")
+        # 2. Create Appointment Types (matching frontend services)
+        services = [
+            {"id": 1, "name": "Hair Styling", "duration": 60},
+            {"id": 2, "name": "Medical Consultation", "duration": 30},
+            {"id": 3, "name": "Massage Therapy", "duration": 90},
+            {"id": 4, "name": "Dental Checkup", "duration": 45},
+            {"id": 5, "name": "Fitness Training", "duration": 60},
+            {"id": 6, "name": "Photography Session", "duration": 120},
+        ]
+        
+        for svc in services:
+            existing = db.query(AppointmentType).filter(AppointmentType.id == svc["id"]).first()
+            if not existing:
+                print(f"Creating Appointment Type: {svc['name']}...")
+                appt_type = AppointmentType(
+                    id=svc["id"],
+                    name=svc["name"],
+                    description=f"{svc['name']} service",
+                    duration_minutes=svc["duration"],
+                    is_published=True,
+                    owner_id=organiser.id,
+                    max_bookings_per_slot=3
+                )
+                db.add(appt_type)
+        db.commit()
 
         # 3. Create a Resource (e.g., Doctor)
         resource = db.query(Resource).filter(Resource.name == "Dr. House").first()
@@ -54,17 +59,11 @@ def seed():
             db.add(resource)
             db.commit()
             db.refresh(resource)
-            
-            # Link resource to appointment type
-            # We need to do this via the secondary table or relationship append
-            service.resources.append(resource)
-            db.commit()
 
         # 4. Create Schedule (Mon-Fri 9-5)
-        # Check if schedule exists
         if not resource.schedules:
             print("Creating Schedules (Mon-Fri 09:00 - 17:00)...")
-            for day in range(0, 5): # 0=Mon, 4=Fri
+            for day in range(0, 5):
                 schedule = Schedule(
                     resource_id=resource.id,
                     day_of_week=day,

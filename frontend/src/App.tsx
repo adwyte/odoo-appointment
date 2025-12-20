@@ -61,6 +61,7 @@ function App() {
           element={<DashboardLayout role="customer" title="Home" />}
         >
           <Route index element={<CustomerDashboard />} />
+          <Route path="book-now" element={<AppointmentBooking />} />
           <Route path="my-bookings" element={<PlaceholderPage title="My Bookings" />} />
           <Route path="profile" element={<PlaceholderPage title="My Profile" />} />
         </Route>
