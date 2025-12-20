@@ -1,72 +1,37 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Login from "./pages/Login";
-import LoginCallback from "./pages/LoginCallback";
-import Landing from "./pages/Landing";
-
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import OrganiserDashboard from "./pages/dashboard/OrganiserDashboard";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
+import AppointmentBooking from './components/AppointmentBooking';
 
-// Placeholder components
+// Placeholder components for other pages
 const PlaceholderPage = ({ title }: { title: string }) => (
-  <div className="p-6">
-    <h2 className="text-xl font-semibold">{title}</h2>
-    <p className="text-gray-500 mt-2">This page is under construction.</p>
+  <div className="placeholder-page">
+    <h2>{title}</h2>
+    <p>This page is under construction.</p>
   </div>
 );
 
-// Utility: get role from JWT
-function getRoleFromToken(): "admin" | "organiser" | "customer" | null {
-  const token = localStorage.getItem("access_token");
-  if (!token) return null;
-
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.role;
-  } catch {
-    return null;
-  }
-}
-
-// Route guard
-function ProtectedRoute({
-  children,
-  allowedRoles,
-}: {
-  children: JSX.Element;
-  allowedRoles: Array<"admin" | "organiser" | "customer">;
-}) {
-  const role = getRoleFromToken();
-
-  if (!role) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (!allowedRoles.includes(role)) {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-}
-
 function App() {
+  // For demo purposes, we'll use a hardcoded role
+  // In production, this would come from auth context
+  const currentRole: "admin" | "organiser" | "customer" = "admin";
+
   return (
     <BrowserRouter>
       <Routes>
-        {/* ---------- Public Routes ---------- */}
-        <Route path="/" element={<Landing />} />
+        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
-        <Route path="/login/callback" element={<LoginCallback />} />
 
-        {/* ---------- Admin Routes ---------- */}
+        {/* Book Appointment Route */}
+        <Route path="/bookAppointment" element={<AppointmentBooking />} />
+
+        {/* Admin Dashboard Routes */}
         <Route
           path="/admin/*"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <DashboardLayout role="admin" title="Admin Dashboard" />
-            </ProtectedRoute>
-          }
+          element={<DashboardLayout role="admin" title="Admin Dashboard" />}
         >
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<PlaceholderPage title="User Management" />} />
@@ -76,14 +41,10 @@ function App() {
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
         </Route>
 
-        {/* ---------- Organiser Routes ---------- */}
+        {/* Organiser Dashboard Routes */}
         <Route
           path="/organiser/*"
-          element={
-            <ProtectedRoute allowedRoles={["organiser"]}>
-              <DashboardLayout role="organiser" title="Organiser Dashboard" />
-            </ProtectedRoute>
-          }
+          element={<DashboardLayout role="organiser" title="Organiser Dashboard" />}
         >
           <Route index element={<OrganiserDashboard />} />
           <Route path="services" element={<PlaceholderPage title="Service Management" />} />
@@ -94,22 +55,36 @@ function App() {
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
         </Route>
 
-        {/* ---------- Customer Routes ---------- */}
+        {/* Customer Dashboard Routes */}
         <Route
           path="/dashboard/*"
-          element={
-            <ProtectedRoute allowedRoles={["customer"]}>
-              <DashboardLayout role="customer" title="Home" />
-            </ProtectedRoute>
-          }
+          element={<DashboardLayout role="customer" title="Home" />}
         >
           <Route index element={<CustomerDashboard />} />
+          <Route path="book-now" element={<AppointmentBooking />} />
           <Route path="my-bookings" element={<PlaceholderPage title="My Bookings" />} />
           <Route path="profile" element={<PlaceholderPage title="My Profile" />} />
         </Route>
 
-        {/* ---------- Catch All ---------- */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Default redirect based on role */}
+        <Route
+          path="/"
+          element={
+            <Navigate
+              to={
+                currentRole === "admin"
+                  ? "/admin"
+                  : currentRole === "organiser"
+                    ? "/organiser"
+                    : "/dashboard"
+              }
+              replace
+            />
+          }
+        />
+
+        {/* Catch all - redirect to login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
