@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from app.api import payments
 from app.database import get_db
 from app.models.models import User, UserRole, Booking, Resource
-from app.api import appointments, auth, payments, schedules
+from app.api import appointments, auth, payments
 from app.core.security import create_access_token
 from app.core.deps import get_current_user
 from passlib.context import CryptContext
@@ -29,24 +29,21 @@ load_dotenv()
 app = FastAPI(title="UrbanCare API", version="1.0.0")
 
 app.add_middleware(
-    SessionMiddleware,
-    secret_key=os.getenv("SESSION_SECRET", "dev-session-secret"),
-)
-
-app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "*",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET", "dev-session-secret"),
+)
+
 app.include_router(appointments.router, prefix="/api")
 app.include_router(auth.router)
 app.include_router(payments.router, prefix="/api")
-app.include_router(schedules.router, prefix="/api")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
