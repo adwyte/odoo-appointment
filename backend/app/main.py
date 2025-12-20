@@ -8,7 +8,7 @@ from datetime import datetime
 import os
 
 from app.models.models import Base, User, UserRole
-from app.api import appointments
+from app.api import appointments , payments
 
 # Database setup
 DATABASE_URL = os.getenv(
@@ -33,6 +33,7 @@ app.add_middleware(
 
 # Include appointments router
 app.include_router(appointments.router, prefix="/api")
+app.include_router(payments.router, prefix="/api")
 
 # Dependency
 def get_db():

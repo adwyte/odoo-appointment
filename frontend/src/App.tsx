@@ -4,8 +4,9 @@ import Login from "./pages/Login";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import OrganiserDashboard from "./pages/dashboard/OrganiserDashboard";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
-import AppointmentBooking from './components/AppointmentBooking';
-import MyBookings from './components/MyBookings';
+import AppointmentBooking from "./components/AppointmentBooking";
+import MyBookings from "./components/MyBookings";
+import PaymentPage from "./pages/dashboard/PaymentPage";
 
 // Placeholder components for other pages
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -26,7 +27,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
 
-        {/* Book Appointment Route */}
+        {/* Book Appointment Route (standalone) */}
         <Route path="/bookAppointment" element={<AppointmentBooking />} />
 
         {/* Admin Dashboard Routes */}
@@ -64,6 +65,7 @@ function App() {
           <Route index element={<CustomerDashboard />} />
           <Route path="book-now" element={<AppointmentBooking />} />
           <Route path="my-bookings" element={<MyBookings />} />
+          <Route path="payment" element={<PaymentPage />} /> {/* ✅ Payment route */}
           <Route path="profile" element={<PlaceholderPage title="My Profile" />} />
         </Route>
 
@@ -76,8 +78,8 @@ function App() {
                 currentRole === "admin"
                   ? "/admin"
                   : currentRole === "organiser"
-                    ? "/organiser"
-                    : "/dashboard"
+                  ? "/organiser"
+                  : "/dashboard"
               }
               replace
             />
