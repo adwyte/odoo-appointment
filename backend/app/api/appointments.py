@@ -40,7 +40,7 @@ def get_slots(
     end_work = datetime.combine(target_date, time(17, 0))
     slot_duration = timedelta(minutes=30)
 
-<<<<<<< HEAD
+
     slots_response: List[SlotOut] = []
     current_time = start_work
     slot_id_counter = 1
@@ -48,7 +48,7 @@ def get_slots(
     while current_time < end_work:
         slot_end = current_time + slot_duration
 
-<<<<<<< HEAD
+
         booking_count = (
             db.query(Booking)
             .filter(
@@ -62,7 +62,7 @@ def get_slots(
         max_capacity = 3
         available = booking_count < max_capacity
 
-<<<<<<< HEAD
+
         slots_response.append(
             SlotOut(
                 id=slot_id_counter,
@@ -104,7 +104,7 @@ def create_booking(
     end_time = booking_data.start_time + timedelta(minutes=30)
 
     # Check capacity
-<<<<<<< HEAD
+
     current_count = (
         db.query(Booking)
         .filter(
@@ -139,8 +139,8 @@ def create_booking(
         customer_name=customer.full_name,
     )
 
-const [adwyte,setadwyte]=useState(false);
-<<<<<<< HEAD
+
+
 @router.get("/bookings", response_model=List[BookingListOut])
 def get_bookings(
     customer_email: str = Query(..., description="Customer email to fetch bookings for"),
@@ -155,7 +155,7 @@ def get_bookings(
         return []
 
     # Get bookings
-<<<<<<< HEAD
+
     bookings = (
         db.query(Booking)
         .filter(Booking.customer_id == customer.id)

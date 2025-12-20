@@ -7,7 +7,7 @@ from typing import Optional
 from datetime import datetime, timedelta
 import os
 
->>>>>>> origin/main
+
 from passlib.context import CryptContext
 from jose import jwt
 

@@ -8,24 +8,26 @@ from app.database import get_db
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 
-# --------- Schemas ---------
+# ---------- Schemas ----------
 class PaymentInitIn(BaseModel):
     booking_id: int
     amount: int
     currency: str = "INR"
-    provider: str = "mock"   # must match enum paymentprovider (yours: "mock")
+    provider: str = "mock"  # must match enum paymentprovider
 
 
 class PaymentSuccessIn(BaseModel):
     payment_id: int
 
 
-# --------- Helpers ---------
-def _calc_tax(price: int) -> int:
-    return int(round(price * 0.10))  # 10%
+# ---------- Helpers ----------
+def _row_or_404(row, msg: str):
+    if not row:
+        raise HTTPException(status_code=404, detail=msg)
+    return row
 
 
-# --------- APIs ---------
+# ---------- Routes ----------
 @router.get("/checkout")
 def get_checkout_details(
     booking_id: int = Query(...),
@@ -33,10 +35,6 @@ def get_checkout_details(
 ):
     """
     Returns price + service + customer details for a booking.
-    Joins:
-      bookings -> users
-      bookings -> appointment_types
-      appointment_types.name -> services.name (case-insensitive)
     """
     row = db.execute(
         text("""
@@ -46,21 +44,22 @@ def get_checkout_details(
                 u.email AS customer_email,
                 at.name AS service_name,
                 COALESCE(s.price_amount, 1000) AS price,
-                COALESCE(s.currency, 'INR') AS currency
+                COALESCE(s.currency, 'INR') AS currency,
+                b.start_time AS start_time,
+                b.end_time AS end_time
             FROM bookings b
             JOIN users u ON u.id = b.customer_id
             JOIN appointment_types at ON at.id = b.appointment_type_id
-            LEFT JOIN services s ON lower(s.name) = lower(at.name)
+            LEFT JOIN services s ON s.name = at.name
             WHERE b.id = :booking_id
         """),
-        {"booking_id": booking_id},
+        {"booking_id": booking_id}
     ).mappings().first()
 
-    if not row:
-        raise HTTPException(status_code=404, detail="Booking not found")
+    _row_or_404(row, "Booking not found")
 
     price = int(row["price"])
-    tax = _calc_tax(price)
+    tax = int(round(price * 0.10))
     total = price + tax
 
     return {
@@ -72,101 +71,152 @@ def get_checkout_details(
         "tax": tax,
         "total": total,
         "currency": row["currency"],
+        "start_time": str(row["start_time"]),
+        "end_time": str(row["end_time"]),
     }
 
 
 @router.post("/init")
 def init_payment(payload: PaymentInitIn, db: Session = Depends(get_db)):
     """
-    Creates a payment row linked to booking_id.
-    NOTE: We do NOT touch appointment_id here (your FK caused issues earlier).
+    Creates a payment row with status = initiated (or succeeded if you want).
     """
-    # sanity check: booking exists
-    booking_exists = db.execute(
-        text("SELECT 1 FROM bookings WHERE id = :bid"),
-        {"bid": payload.booking_id},
-    ).scalar()
+    # verify booking exists
+    booking = db.execute(
+        text("SELECT id FROM bookings WHERE id = :bid"),
+        {"bid": payload.booking_id}
+    ).mappings().first()
+    _row_or_404(booking, "Booking not found")
 
-    if not booking_exists:
-        raise HTTPException(status_code=404, detail="Booking not found")
+    row = db.execute(
+        text("""
+            INSERT INTO payments (booking_id, amount, currency, provider, status, provider_ref)
+            VALUES (
+                :booking_id,
+                :amount,
+                :currency,
+                (:provider)::paymentprovider,
+                ('initiated')::paymentstatus,
+                NULL
+            )
+            RETURNING
+                id,
+                booking_id,
+                amount,
+                currency,
+                provider::text AS provider,
+                status::text AS status,
+                created_at
+        """),
+        {
+            "booking_id": payload.booking_id,
+            "amount": payload.amount,
+            "currency": payload.currency,
+            "provider": payload.provider,
+        }
+    ).mappings().first()
 
-    try:
-        row = db.execute(
-            text("""
-                INSERT INTO payments (booking_id, amount, currency, provider, status, provider_ref)
-                VALUES (
-                    :booking_id,
-                    :amount,
-                    :currency,
-                    (:provider)::paymentprovider,
-                    ('initiated')::paymentstatus,
-                    NULL
-                )
-                RETURNING
-                    id,
-                    booking_id,
-                    amount,
-                    currency,
-                    provider::text AS provider,
-                    status::text AS status,
-                    provider_ref,
-                    created_at
-            """),
-            {
-                "booking_id": payload.booking_id,
-                "amount": payload.amount,
-                "currency": payload.currency,
-                "provider": payload.provider,
-            },
-        ).mappings().first()
+    db.commit()
 
-        db.commit()
-        return dict(row)
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=f"Payment init failed: {e}")
+    return dict(row)
 
 
 @router.post("/success")
 def mark_payment_success(payload: PaymentSuccessIn, db: Session = Depends(get_db)):
     """
     Marks payment as succeeded and updates booking.payment_status to 'paid'.
-    Your bookings.payment_status column is TEXT, so we store 'paid'.
     """
-    try:
-        p = db.execute(
-            text("SELECT id, booking_id FROM payments WHERE id = :pid"),
-            {"pid": payload.payment_id},
-        ).mappings().first()
+    payment = db.execute(
+        text("SELECT id, booking_id FROM payments WHERE id = :pid"),
+        {"pid": payload.payment_id}
+    ).mappings().first()
+    _row_or_404(payment, "Payment not found")
 
-        if not p:
-            raise HTTPException(status_code=404, detail="Payment not found")
+    db.execute(
+        text("""
+            UPDATE payments
+            SET status = ('succeeded')::paymentstatus,
+                updated_at = now()
+            WHERE id = :pid
+        """),
+        {"pid": payload.payment_id}
+    )
 
-        # update payment
-        db.execute(
-            text("""
-                UPDATE payments
-                SET status = ('succeeded')::paymentstatus,
-                    updated_at = NOW()
-                WHERE id = :pid
-            """),
-            {"pid": payload.payment_id},
-        )
+    # your bookings.payment_status is TEXT currently, so update text value
+    db.execute(
+        text("""
+            UPDATE bookings
+            SET payment_status = 'paid'
+            WHERE id = :bid
+        """),
+        {"bid": payment["booking_id"]}
+    )
 
-        # update booking payment_status (TEXT column)
-        db.execute(
-            text("""
-                UPDATE bookings
-                SET payment_status = 'paid'
-                WHERE id = :bid
-            """),
-            {"bid": p["booking_id"]},
-        )
+    db.commit()
 
-        db.commit()
-        return {"ok": True, "payment_id": payload.payment_id, "booking_id": p["booking_id"]}
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=f"Payment success failed: {e}")
+    return {"ok": True, "payment_id": payload.payment_id, "booking_id": payment["booking_id"]}
+
+
+@router.get("/receipt")
+def get_receipt(
+    payment_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns receipt details for a given payment_id.
+    """
+    row = db.execute(
+        text("""
+            SELECT
+                p.id AS payment_id,
+                p.booking_id AS booking_id,
+                p.amount AS amount,
+                p.currency AS currency,
+                p.provider::text AS provider,
+                p.status::text AS status,
+                p.created_at AS paid_at,
+
+                b.start_time AS start_time,
+                b.end_time AS end_time,
+
+                u.full_name AS customer_name,
+                u.email AS customer_email,
+
+                at.name AS service_name,
+                COALESCE(s.price_amount, 1000) AS base_price
+            FROM payments p
+            JOIN bookings b ON b.id = p.booking_id
+            JOIN users u ON u.id = b.customer_id
+            JOIN appointment_types at ON at.id = b.appointment_type_id
+            LEFT JOIN services s ON s.name = at.name
+            WHERE p.id = :pid
+        """),
+        {"pid": payment_id}
+    ).mappings().first()
+
+    _row_or_404(row, "Receipt not found")
+
+    base_price = int(row["base_price"])
+    tax = int(round(base_price * 0.10))
+    total = base_price + tax
+
+    return {
+        "receipt_no": f"URB-{row['payment_id']:06d}",
+        "payment_id": row["payment_id"],
+        "booking_id": row["booking_id"],
+        "status": row["status"],
+        "provider": row["provider"],
+        "currency": row["currency"],
+
+        "customer_name": row["customer_name"],
+        "customer_email": row["customer_email"],
+        "service_name": row["service_name"],
+
+        "base_price": base_price,
+        "tax": tax,
+        "total": total,
+
+        "paid_at": str(row["paid_at"]),
+        "start_time": str(row["start_time"]),
+        "end_time": str(row["end_time"]),
+    }
