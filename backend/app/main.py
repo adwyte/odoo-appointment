@@ -10,8 +10,11 @@ import os
 from passlib.context import CryptContext
 from jose import jwt
 
-from app.models.models import Base, User, UserRole, Booking, BookingStatus, AppointmentType
-from app.api import appointments, auth
+from app.models.models import Base, User, UserRole
+from app.api import appointments, auth, payments
+
+from dotenv import load_dotenv
+load_dotenv()
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -43,6 +46,7 @@ app.add_middleware(
 )
 
 app.include_router(appointments.router, prefix="/api")
+app.include_router(payments.router, prefix="/api")
 app.include_router(auth.router)
 
 # =====================

@@ -35,6 +35,10 @@ class QuestionType(enum.Enum):
     CHOICE = "choice"
     CHECKBOX = "checkbox"
 
+class PaymentStatus(enum.Enum):
+    PENDING = "pending"
+    PAID = "paid"
+    MREFUNDED = "refunded"
 # Models
 
 class User(Base):

@@ -2,15 +2,15 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Landing from "./pages/Landing";
 
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import OrganiserDashboard from "./pages/dashboard/OrganiserDashboard";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
-import UsersPage from "./pages/dashboard/UsersPage";
-import AppointmentsPage from "./pages/dashboard/AppointmentsPage";
+import PaymentPage from "./pages/dashboard/PaymentPage";
+
 import AppointmentBooking from "./components/AppointmentBooking";
 import MyBookings from "./components/MyBookings";
-import Landing from "./pages/Landing";
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="p-6">
@@ -89,8 +89,11 @@ export default function App() {
           <Route index element={<CustomerDashboard />} />
           <Route path="book-now" element={<AppointmentBooking />} />
           <Route path="my-bookings" element={<MyBookings />} />
+          <Route path="payment" element={<PaymentPage />} />
+          <Route path="profile" element={<PlaceholderPage title="My Profile" />} />
         </Route>
 
+        {/* Catch all - redirect to landing */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
