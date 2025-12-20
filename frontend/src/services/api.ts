@@ -152,4 +152,31 @@ export const api = {
     if (!res.ok) throw new Error("Failed to fetch stats");
     return res.json();
   },
+
+  /* ---------- APPOINTMENTS ---------- */
+
+  async getAppointments(): Promise<{
+    total: number;
+    pending_count: number;
+    confirmed_count: number;
+    cancelled_count: number;
+    completed_count: number;
+    appointments: unknown[];
+  }> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/appointments`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      // Return default values if endpoint fails
+      return {
+        total: 0,
+        pending_count: 0,
+        confirmed_count: 0,
+        cancelled_count: 0,
+        completed_count: 0,
+        appointments: [],
+      };
+    }
+    return res.json();
+  },
 };
