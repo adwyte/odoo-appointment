@@ -6,7 +6,7 @@ import Badge from "../../components/ui/Badge";
 
 const services = [
   {
-    id: 1,
+    id: 5,
     name: "Hair Styling",
     provider: "Style Studio",
     duration: "1 hour",
@@ -17,8 +17,8 @@ const services = [
     available: true,
   },
   {
-    id: 2,
-    name: "Medical Consultation",
+    id: 6,
+    name: "Consultation",
     provider: "Dr. Sarah Wilson",
     duration: "30 min",
     price: "$80",
@@ -28,7 +28,7 @@ const services = [
     available: true,
   },
   {
-    id: 3,
+    id: 7,
     name: "Massage Therapy",
     provider: "Wellness Center",
     duration: "1.5 hours",
@@ -39,7 +39,7 @@ const services = [
     available: true,
   },
   {
-    id: 4,
+    id: 8,
     name: "Dental Checkup",
     provider: "Dr. Mike Chen",
     duration: "45 min",
@@ -47,28 +47,6 @@ const services = [
     rating: 4.6,
     reviews: 67,
     image: "🦷",
-    available: true,
-  },
-  {
-    id: 5,
-    name: "Fitness Training",
-    provider: "FitLife Gym",
-    duration: "1 hour",
-    price: "$35",
-    rating: 4.8,
-    reviews: 156,
-    image: "🏋️",
-    available: true,
-  },
-  {
-    id: 6,
-    name: "Photography Session",
-    provider: "Capture Studios",
-    duration: "2 hours",
-    price: "$150",
-    rating: 4.9,
-    reviews: 78,
-    image: "📸",
     available: true,
   },
 ];

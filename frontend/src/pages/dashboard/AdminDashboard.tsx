@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Users, Calendar, UserCog, TrendingUp, RefreshCw } from "lucide-react";
 import StatCard from "../../components/ui/StatCard";
 import DataTable from "../../components/ui/DataTable";
@@ -80,6 +81,7 @@ const appointmentColumns = [
 ];
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<DisplayUser[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -157,9 +159,9 @@ export default function AdminDashboard() {
     },
     {
       title: "Total Appointments",
-      value: "0",
-      change: "Coming soon",
-      changeType: "neutral" as const,
+      value: stats?.total_appointments?.toString() || "0",
+      change: "All bookings",
+      changeType: "positive" as const,
       icon: Calendar,
     },
     {
@@ -201,7 +203,7 @@ export default function AdminDashboard() {
         <div className="dashboard-card">
           <div className="card-header">
             <h3>Recent Users</h3>
-            <button className="btn btn-outline">View All</button>
+            <button className="btn btn-outline" onClick={() => navigate("/admin/users")}>View All</button>
           </div>
           {loading ? (
             <div className="loading-state">Loading users...</div>
@@ -215,7 +217,7 @@ export default function AdminDashboard() {
         <div className="dashboard-card">
           <div className="card-header">
             <h3>Recent Appointments</h3>
-            <button className="btn btn-outline">View All</button>
+            <button className="btn btn-outline" onClick={() => navigate("/admin/appointments")}>View All</button>
           </div>
           <DataTable columns={appointmentColumns} data={recentAppointments} />
         </div>

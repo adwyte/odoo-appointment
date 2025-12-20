@@ -10,6 +10,20 @@ export interface User {
   created_at: string | null;
 }
 
+export interface CreateUserData {
+  email: string;
+  password: string;
+  full_name: string;
+  role: "customer" | "admin" | "organiser";
+}
+
+export interface UpdateUserData {
+  email?: string;
+  full_name?: string;
+  role?: "customer" | "admin" | "organiser";
+  is_active?: boolean;
+}
+
 export interface UserStats {
   total_users: number;
   total_providers?: number;
@@ -29,7 +43,8 @@ export const api = {
   // Users
   async getUsers(params?: { limit?: number }): Promise<UsersResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users`);
+      const queryParams = params?.limit ? `?limit=${params.limit}` : "";
+      const response = await fetch(`${API_BASE_URL}/api/users${queryParams}`);
       if (!response.ok) {
         throw new Error("Failed to fetch users");
       }
@@ -59,26 +74,28 @@ export const api = {
     }
   },
 
-  async createUser(userData: Partial<User>): Promise<User> {
+  async createUser(userData: CreateUserData): Promise<User> {
     const response = await fetch(`${API_BASE_URL}/api/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
     if (!response.ok) {
-      throw new Error("Failed to create user");
+      const error = await response.json().catch(() => ({ detail: "Failed to create user" }));
+      throw new Error(error.detail || "Failed to create user");
     }
     return response.json();
   },
 
-  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+  async updateUser(id: number, userData: UpdateUserData): Promise<User> {
     const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
     if (!response.ok) {
-      throw new Error("Failed to update user");
+      const error = await response.json().catch(() => ({ detail: "Failed to update user" }));
+      throw new Error(error.detail || "Failed to update user");
     }
     return response.json();
   },

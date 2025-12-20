@@ -1,8 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
+<<<<<<< HEAD
 from typing import Optional
 from datetime import datetime, timedelta
 import os
@@ -13,6 +14,14 @@ from jose import jwt
 from app.models.models import Base, User, UserRole
 from app.api import appointments, auth
 
+=======
+from typing import Optional, List
+from datetime import datetime, date
+import os
+
+from app.models.models import Base, User, UserRole, Booking, BookingStatus, AppointmentType
+from app.api import appointments
+>>>>>>> d364fdd (Fix appointment booking - update service IDs to match database)
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL"
@@ -90,8 +99,8 @@ class UserResponse(BaseModel):
     email: str
     full_name: str
     role: str
-    is_active: bool
-    is_verified: bool
+    is_active: Optional[bool] = True
+    is_verified: Optional[bool] = False
     created_at: Optional[datetime] = None
 
     class Config:
@@ -108,9 +117,20 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+<<<<<<< HEAD
 # =====================
 # ROUTES
 # =====================
+=======
+class StatsResponse(BaseModel):
+    total_users: int
+    total_providers: int
+    total_appointments: int
+    total_revenue: float
+    active_users: int
+    total_organisers: int
+    total_customers: int
+>>>>>>> d364fdd (Fix appointment booking - update service IDs to match database)
 
 @app.get("/")
 def root():
@@ -165,4 +185,193 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         }
     )
 
+<<<<<<< HEAD
     return {"access_token": token}
+=======
+
+@app.delete("/api/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted successfully"}
+
+
+@app.get("/api/stats", response_model=StatsResponse)
+def get_stats(db: Session = Depends(get_db)):
+    total_users = db.query(User).count()
+    active_users = db.query(User).filter(User.is_active == True).count()
+    total_organisers = db.query(User).filter(User.role == UserRole.ORGANISER).count()
+    total_customers = db.query(User).filter(User.role == UserRole.CUSTOMER).count()
+    total_appointments = db.query(Booking).count()
+    return StatsResponse(
+        total_users=total_users,
+        total_providers=total_organisers,
+        total_appointments=total_appointments,
+        total_revenue=0.0,
+        active_users=active_users,
+        total_organisers=total_organisers,
+        total_customers=total_customers
+    )
+
+
+# Appointment schemas
+class AppointmentResponse(BaseModel):
+    id: int
+    customer_name: str
+    customer_email: str
+    service_name: str
+    start_time: datetime
+    end_time: datetime
+    status: str
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AppointmentListResponse(BaseModel):
+    appointments: List[AppointmentResponse]
+    total: int
+    pending_count: int
+    confirmed_count: int
+    cancelled_count: int
+    completed_count: int
+
+
+class AppointmentStatusUpdate(BaseModel):
+    status: str
+
+
+# Admin Appointments endpoints
+@app.get("/api/admin/appointments", response_model=AppointmentListResponse)
+def get_all_appointments(
+    status: Optional[str] = Query(None, description="Filter by status"),
+    search: Optional[str] = Query(None, description="Search by customer name or email"),
+    date_from: Optional[str] = Query(None, description="Filter from date (YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Filter to date (YYYY-MM-DD)"),
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db)
+):
+    """Get all appointments with filters for admin dashboard"""
+    query = db.query(Booking)
+    
+    # Apply status filter
+    if status and status != "all":
+        status_map = {
+            "pending": BookingStatus.PENDING,
+            "confirmed": BookingStatus.CONFIRMED,
+            "cancelled": BookingStatus.CANCELLED,
+            "completed": BookingStatus.COMPLETED,
+        }
+        if status in status_map:
+            query = query.filter(Booking.status == status_map[status])
+    
+    # Apply date filters
+    if date_from:
+        try:
+            from_date = datetime.strptime(date_from, "%Y-%m-%d")
+            query = query.filter(Booking.start_time >= from_date)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            to_date = datetime.strptime(date_to, "%Y-%m-%d")
+            to_date = to_date.replace(hour=23, minute=59, second=59)
+            query = query.filter(Booking.start_time <= to_date)
+        except ValueError:
+            pass
+    
+    # Get total count before pagination
+    total = query.count()
+    
+    # Get status counts
+    pending_count = db.query(Booking).filter(Booking.status == BookingStatus.PENDING).count()
+    confirmed_count = db.query(Booking).filter(Booking.status == BookingStatus.CONFIRMED).count()
+    cancelled_count = db.query(Booking).filter(Booking.status == BookingStatus.CANCELLED).count()
+    completed_count = db.query(Booking).filter(Booking.status == BookingStatus.COMPLETED).count()
+    
+    # Apply pagination and ordering
+    bookings = query.order_by(Booking.start_time.desc()).offset(skip).limit(limit).all()
+    
+    appointments = []
+    for booking in bookings:
+        # Get customer info
+        customer = db.query(User).filter(User.id == booking.customer_id).first()
+        customer_name = customer.full_name if customer else "Unknown"
+        customer_email = customer.email if customer else "Unknown"
+        
+        # Apply search filter (after getting customer info)
+        if search:
+            search_lower = search.lower()
+            if search_lower not in customer_name.lower() and search_lower not in customer_email.lower():
+                continue
+        
+        # Get service/appointment type info
+        appt_type = db.query(AppointmentType).filter(AppointmentType.id == booking.appointment_type_id).first()
+        service_name = appt_type.name if appt_type else "Unknown Service"
+        
+        appointments.append(AppointmentResponse(
+            id=booking.id,
+            customer_name=customer_name,
+            customer_email=customer_email,
+            service_name=service_name,
+            start_time=booking.start_time,
+            end_time=booking.end_time,
+            status=booking.status.value if booking.status else "pending",
+            created_at=None
+        ))
+    
+    return AppointmentListResponse(
+        appointments=appointments,
+        total=total,
+        pending_count=pending_count,
+        confirmed_count=confirmed_count,
+        cancelled_count=cancelled_count,
+        completed_count=completed_count
+    )
+
+
+@app.put("/api/admin/appointments/{appointment_id}/status")
+def update_appointment_status(
+    appointment_id: int,
+    status_update: AppointmentStatusUpdate,
+    db: Session = Depends(get_db)
+):
+    """Update appointment status"""
+    booking = db.query(Booking).filter(Booking.id == appointment_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    status_map = {
+        "pending": BookingStatus.PENDING,
+        "confirmed": BookingStatus.CONFIRMED,
+        "cancelled": BookingStatus.CANCELLED,
+        "completed": BookingStatus.COMPLETED,
+    }
+    
+    if status_update.status not in status_map:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    booking.status = status_map[status_update.status]
+    db.commit()
+    
+    return {"message": f"Appointment status updated to {status_update.status}"}
+
+
+@app.delete("/api/admin/appointments/{appointment_id}")
+def delete_appointment(appointment_id: int, db: Session = Depends(get_db)):
+    """Delete an appointment"""
+    booking = db.query(Booking).filter(Booking.id == appointment_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    db.delete(booking)
+    db.commit()
+    return {"message": "Appointment deleted successfully"}
+>>>>>>> d364fdd (Fix appointment booking - update service IDs to match database)
