@@ -3,14 +3,10 @@ from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from sqlalchemy.orm import Session
 
-from app.core.config import (
-    GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET,
-    FRONTEND_URL,
-)
+from app.core.config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, FRONTEND_URL
+from app.models.models import User, UserRole
+from app.database import get_db
 from app.core.security import create_access_token
-from app.db import get_db
-from app.models.models import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -43,7 +39,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             email=email,
             full_name=name,
             password_hash="GOOGLE_OAUTH",
-            role="customer",     # default
+            role=UserRole.CUSTOMER,  # ✅ FIX
             is_active=True,
             is_verified=True,
         )
@@ -55,7 +51,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         {
             "user_id": user.id,
             "email": user.email,
-            "role": user.role,
+            "role": user.role.value,
         }
     )
 

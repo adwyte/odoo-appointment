@@ -34,9 +34,9 @@ export default function Landing() {
       effect = window.VANTA.WAVES({
         el: vantaRef.current,
         color: 0x341c42,
-        shininess: 12,
+        shininess: 10,
         waveHeight: 4,
-        waveSpeed: 1.5,
+        waveSpeed: 1.4,
         zoom: 1.02,
       });
     };
@@ -46,41 +46,37 @@ export default function Landing() {
   }, []);
 
   return (
-    <div ref={vantaRef} className="min-h-screen flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-12">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-2">
-          UrbanCare Appointment Portal
+    <div
+      ref={vantaRef}
+      className="min-h-screen flex flex-col items-center justify-center text-center px-6"
+    >
+      {/* subtle dark overlay for contrast */}
+      <div className="absolute inset-0 bg-black/30" />
+
+      <div className="relative z-10 max-w-3xl">
+        <h1 className="text-5xl md:text-6xl font-semibold text-white mb-6">
+          UrbanCare
         </h1>
 
-        <p className="text-gray-600 mb-8">
-          Manage services, bookings, availability, and customers from a single
-          professional dashboard.
+        <p className="text-lg md:text-xl text-gray-200 mb-10 leading-relaxed">
+          A professional appointment management platform for customers,
+          organisers, and administrators.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {[
-            ["Appointments", "Real-time booking & confirmations"],
-            ["Availability", "Flexible schedules & capacity rules"],
-            ["Calendar Sync", "Google Calendar integration"],
-          ].map(([title, desc]) => (
-            <div
-              key={title}
-              className="border rounded-lg p-4 text-sm text-gray-700"
-            >
-              <p className="font-medium mb-1">{title}</p>
-              <p className="text-gray-500">{desc}</p>
-            </div>
-          ))}
+        <div className="flex justify-center gap-6 text-sm text-gray-300 mb-12">
+          <span>Real-time booking</span>
+          <span>•</span>
+          <span>Availability management</span>
+          <span>•</span>
+          <span>Calendar integration</span>
         </div>
 
-        <div className="flex justify-end">
-          <button
-            onClick={() => navigate("/login")}
-            className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-900"
-          >
-            Get Started
-          </button>
-        </div>
+        <button
+          onClick={() => navigate("/login")}
+          className="px-8 py-3 rounded-lg bg-white text-black font-medium hover:bg-gray-100 transition"
+        >
+          Get Started
+        </button>
       </div>
     </div>
   );

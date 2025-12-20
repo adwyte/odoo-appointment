@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useVantaWaves } from "../hooks/useVantaWaves";
 
 export default function Signup() {
+  const vantaRef = useVantaWaves();
   const navigate = useNavigate();
+
   const [form, setForm] = useState({
-    name: "",
+    full_name: "",
     email: "",
     password: "",
     role: "customer",
   });
 
-  const submit = async () => {
-    const res = await fetch("http://localhost:8000/auth/signup", {
+  const handleSignup = async () => {
+    const res = await fetch("http://localhost:8000/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -25,28 +28,44 @@ export default function Signup() {
     navigate("/login");
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
-        <h2 className="text-xl font-semibold mb-6">Create Account</h2>
+  const handleGoogleSignup = () => {
+    window.location.href = "http://localhost:8000/auth/google/login";
+  };
 
-        {["name", "email", "password"].map((f) => (
-          <input
-            key={f}
-            placeholder={f}
-            type={f === "password" ? "password" : "text"}
-            className="w-full border px-3 py-2 mb-3 rounded-lg"
-            onChange={(e) =>
-              setForm({ ...form, [f]: e.target.value })
-            }
-          />
-        ))}
+  return (
+    <div
+      ref={vantaRef}
+      className="min-h-screen flex items-center justify-center px-4"
+    >
+      <div className="absolute inset-0 bg-black/30" />
+
+      <div className="relative z-10 bg-white rounded-xl shadow-lg w-full max-w-sm p-8">
+        <h2 className="text-2xl font-semibold mb-6 text-center">
+          Create your account
+        </h2>
+
+        <input
+          placeholder="Full name"
+          className="w-full border rounded-lg px-3 py-2 mb-3"
+          onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+        />
+
+        <input
+          placeholder="Email"
+          className="w-full border rounded-lg px-3 py-2 mb-3"
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          className="w-full border rounded-lg px-3 py-2 mb-3"
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+        />
 
         <select
           className="w-full border rounded-lg px-3 py-2 mb-4"
-          onChange={(e) =>
-            setForm({ ...form, role: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, role: e.target.value })}
         >
           <option value="customer">Customer</option>
           <option value="organiser">Organiser</option>
@@ -54,11 +73,29 @@ export default function Signup() {
         </select>
 
         <button
-          onClick={submit}
-          className="w-full bg-black text-white py-2 rounded-lg"
+          onClick={handleSignup}
+          className="w-full bg-black text-white py-2 rounded-lg mb-3 hover:bg-gray-900"
         >
           Sign Up
         </button>
+
+        {/* GOOGLE SIGN UP */}
+        <button
+          onClick={handleGoogleSignup}
+          className="w-full border py-2 rounded-lg mb-4 hover:bg-gray-50"
+        >
+          Sign up with Google
+        </button>
+
+        <p className="text-sm text-center text-gray-500">
+          Already have an account?{" "}
+          <span
+            className="text-black cursor-pointer font-medium"
+            onClick={() => navigate("/login")}
+          >
+            Sign in
+          </span>
+        </p>
       </div>
     </div>
   );
