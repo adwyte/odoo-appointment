@@ -5,7 +5,7 @@ from typing import List
 
 from app.database import get_db
 from app.models.models import Booking, AppointmentType, Slot, BookingStatus, User, UserRole
-from app.schemas.appointment import SlotOut, BookingCreate, BookingOut
+from app.schemas.appointment import SlotOut, BookingCreate, BookingOut, BookingListOut
 
 router = APIRouter()
 
@@ -120,7 +120,7 @@ def create_booking(
     )
 
 
-@router.get("/bookings")
+@router.get("/bookings", response_model=List[BookingListOut])
 def get_bookings(
         customer_email: str = Query(..., description="Customer email to fetch bookings for"),
         db: Session = Depends(get_db)
@@ -145,12 +145,13 @@ def get_bookings(
             AppointmentType.id == booking.appointment_type_id
         ).first()
         
-        result.append({
-            "id": booking.id,
-            "service_name": appt_type.name if appt_type else "Unknown Service",
-            "start_time": booking.start_time.isoformat(),
-            "end_time": booking.end_time.isoformat(),
-            "status": booking.status.value
-        })
+        result.append(BookingListOut(
+            id=booking.id,
+            service_name=appt_type.name if appt_type else "Unknown Service",
+            start_time=booking.start_time,
+            end_time=booking.end_time,
+            status=booking.status.value,
+            created_at=None  # Booking model doesn't have created_at
+        ))
     
     return result
