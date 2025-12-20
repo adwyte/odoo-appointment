@@ -13,10 +13,15 @@ from jose import jwt
 from app.models.models import Base, User, UserRole
 from app.api import appointments, auth
 
+from dotenv import load_dotenv
+load_dotenv()
+
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL"
 )
+
+from app.database import get_db
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret")
 ALGORITHM = "HS256"
@@ -24,12 +29,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# =====================
-# APP
-# =====================
 
 app = FastAPI(title="UrbanCare API", version="1.0.0")
 
@@ -45,20 +45,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ FIX: register routers
 app.include_router(appointments.router, prefix="/api")
-app.include_router(auth.router)  # <-- THIS WAS MISSING
-
-# =====================
-# DEPENDENCY
-# =====================
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+app.include_router(auth.router)
 
 # =====================
 # SECURITY UTILS
