@@ -33,6 +33,18 @@ class BookingOut(BaseModel):
     end_time: datetime
     status: str
     customer_name: Optional[str] = None
+    service_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class BookingListOut(BaseModel):
+    id: int
+    service_name: str
+    start_time: datetime
+    end_time: datetime
+    status: str
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

@@ -37,7 +37,6 @@ const organiserLinks = [
 
 const customerLinks = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Home" },
-  { to: "/dashboard/book-now", icon: CalendarPlus, label: "Book Now" },
   { to: "/dashboard/my-bookings", icon: Calendar, label: "My Bookings" },
   { to: "/dashboard/profile", icon: Users, label: "Profile" },
 ];
