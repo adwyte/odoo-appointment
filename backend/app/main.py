@@ -7,7 +7,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from app.database import get_db
-from app.models.models import User, UserRole, Booking
+from app.models.models import User, UserRole, Booking, Resource
 from app.api import appointments, auth
 from app.core.security import create_access_token
 from app.core.deps import get_current_user
@@ -186,21 +186,44 @@ def delete_user(user_id: int, force: bool = False, db: Session = Depends(get_db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    count = db.query(Booking).filter(Booking.customer_id == user_id).count()
-    if count > 0 and not force:
-        raise HTTPException(
-            status_code=400,
-            detail="User has bookings. Use force=true to delete anyway.",
-        )
+    # Count bookings as customer
+    booking_count = db.query(Booking).filter(Booking.customer_id == user_id).count()
+    
+    # Count resources linked to this user
+    resource_count = db.query(Resource).filter(Resource.user_id == user_id).count()
+    
+    total_references = booking_count + resource_count
+    
+    if total_references > 0 and not force:
+        raise HTTPException(status_code=400, detail=f"User has {booking_count} booking(s) and {resource_count} resource(s)")
 
+    # Delete bookings where user is customer
     db.query(Booking).filter(Booking.customer_id == user_id).delete()
+    
+    # Unlink resources from this user (set user_id to NULL instead of deleting)
+    db.query(Resource).filter(Resource.user_id == user_id).update({"user_id": None})
+    
     db.delete(user)
     db.commit()
+    return {"message": "User deleted", "appointments_deleted": booking_count, "resources_unlinked": resource_count}
 
+
+# ---------- USER APPOINTMENT COUNT ----------
+@app.get("/api/users/{user_id}/appointments/count")
+def get_user_appointment_count(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    booking_count = db.query(Booking).filter(Booking.customer_id == user_id).count()
+    resource_count = db.query(Resource).filter(Resource.user_id == user_id).count()
+    
     return {
-        "message": "User deleted successfully",
-        "appointments_deleted": count,
+        "appointment_count": booking_count,
+        "resource_count": resource_count,
+        "total_references": booking_count + resource_count
     }
+
 
 # ---------- STATS ----------
 @app.get("/api/stats")
