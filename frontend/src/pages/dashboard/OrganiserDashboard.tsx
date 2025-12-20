@@ -24,65 +24,57 @@ interface Service {
   booking_count: number;
 }
 
-const todayBookings = [
-  {
-    id: 1,
-    time: "09:00 AM",
-    customer: "Sarah Miller",
-    service: "Initial Consultation",
-    status: "Confirmed",
-  },
-  {
-    id: 2,
-    time: "10:00 AM",
-    customer: "James Wilson",
-    service: "Follow-up Session",
-    status: "Confirmed",
-  },
-  {
-    id: 3,
-    time: "11:30 AM",
-    customer: "Emily Chen",
-    service: "Extended Consultation",
-    status: "Pending",
-  },
-  {
-    id: 4,
-    time: "02:00 PM",
-    customer: "Michael Lee",
-    service: "Initial Consultation",
-    status: "Confirmed",
-  },
-  {
-    id: 5,
-    time: "03:30 PM",
-    customer: "Jessica Brown",
-    service: "Follow-up Session",
-    status: "Pending",
-  },
-];
+interface TodayBooking {
+  id: number;
+  time: string;
+  customer: string;
+  service: string;
+  status: string;
+}
 
 export default function OrganiserDashboard() {
   const navigate = useNavigate();
   const [services, setServices] = useState<Service[]>([]);
+  const [todayBookings, setTodayBookings] = useState<TodayBooking[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchServices = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get<Service[]>(
+      // Fetch services
+      const servicesResponse = await axios.get<Service[]>(
         "http://localhost:8000/api/services?published_only=false"
       );
-      setServices(response.data);
+      setServices(servicesResponse.data);
+
+      // Fetch today's appointments
+      const today = new Date().toISOString().split("T")[0];
+      const appointmentsResponse = await axios.get(
+        `http://localhost:8000/api/admin/appointments?date_from=${today}&date_to=${today}`
+      );
+
+      const bookings = (appointmentsResponse.data.appointments || []).map(
+        (apt: any) => ({
+          id: apt.id,
+          time: new Date(apt.start_time).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          customer: apt.customer_name,
+          service: apt.service_name,
+          status: apt.status.charAt(0).toUpperCase() + apt.status.slice(1),
+        })
+      );
+      setTodayBookings(bookings);
     } catch (error) {
-      console.error("Error fetching services:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchServices();
+    fetchData();
   }, []);
 
   const handleDeleteService = async (id: number) => {
@@ -185,7 +177,7 @@ export default function OrganiserDashboard() {
         <div className="dashboard-card">
           <div className="card-header">
             <h3>Your Services</h3>
-            <button className="btn btn-outline" onClick={fetchServices}>
+            <button className="btn btn-outline" onClick={fetchData}>
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </button>
