@@ -69,8 +69,8 @@ const appointmentColumns = [
           apt.status === "Confirmed"
             ? "success"
             : apt.status === "Pending"
-            ? "warning"
-            : "error"
+              ? "warning"
+              : "error"
         }
       >
         {apt.status}
