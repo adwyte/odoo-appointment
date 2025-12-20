@@ -4,69 +4,23 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Badge from "../../components/ui/Badge";
 
-const services = [
-  {
-    id: 1,
-    name: "Hair Styling",
-    provider: "Style Studio",
-    duration: "1 hour",
-    price: "450/-",
-    image: "💇",
-    available: true,
-  },
-  {
-    id: 2,
-    name: "Medical Consultation",
-    provider: "Dr. Sarah Wilson",
-    duration: "30 min",
-    price: "800/-",
-    image: "🏥",
-    available: true,
-  },
-  {
-    id: 3,
-    name: "Massage Therapy",
-    provider: "Wellness Center",
-    duration: "1.5 hours",
-    price: "950/-",
-    image: "💆",
-    available: true,
-  },
-  {
-    id: 4,
-    name: "Dental Checkup",
-    provider: "Dr. Mike Chen",
-    duration: "45 min",
-    price: "1200/-",
-    image: "🦷",
-    available: true,
-  },
-  {
-    id: 5,
-    name: "Fitness Training",
-    provider: "FitLife Gym",
-    duration: "1 hour",
-    price: "350/-",
-    image: "🏋️",
-    available: true,
-  },
-  {
-    id: 6,
-    name: "Photography Session",
-    provider: "Capture Studios",
-    duration: "2 hours",
-    price: "1500/-",
-    image: "📸",
-    available: true,
-  },
-];
-
 interface Booking {
   id: number;
   service_name: string;
   start_time: string;
   end_time: string;
   status: string;
+}
+
+interface Service {
+  id: number;
+  name: string;
+  description: string | null;
+  duration_minutes: number;
+  price: string | null;
+  is_published: boolean;
+  provider_name: string;
+  booking_count: number;
 }
 
 // ---- Category logic ----
@@ -104,16 +58,30 @@ const detectCategory = (serviceName: string): Category => {
   return "Other";
 };
 
+const detectEmoji = (serviceName: string): string => {
+  const s = serviceName.toLowerCase();
+  if (s.includes("hair")) return "💇";
+  if (s.includes("medical") || s.includes("consult")) return "🏥";
+  if (s.includes("massage")) return "💆";
+  if (s.includes("dental") || s.includes("tooth")) return "🦷";
+  if (s.includes("fitness") || s.includes("gym") || s.includes("training")) return "🏋️";
+  if (s.includes("photo") || s.includes("photography")) return "📸";
+  if (s.includes("pedicure") || s.includes("manicure") || s.includes("spa")) return "💅";
+  return "🏷️";
+};
+
 export default function CustomerDashboard() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
 
+  const [services, setServices] = useState<Service[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
   const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
   const [userEmail, setUserEmail] = useState("");
   const [showEmailPrompt, setShowEmailPrompt] = useState(true);
 
-  // Load email from localStorage
+  // Load email from localStorage and fetch services
   useEffect(() => {
     const savedEmail = localStorage.getItem("userEmail");
     if (savedEmail) {
@@ -121,7 +89,20 @@ export default function CustomerDashboard() {
       setShowEmailPrompt(false);
       fetchUpcomingBookings(savedEmail);
     }
+    fetchServices();
   }, []);
+
+  const fetchServices = async () => {
+    setLoadingServices(true);
+    try {
+      const response = await axios.get<Service[]>("http://localhost:8000/api/services?published_only=true");
+      setServices(response.data);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+    } finally {
+      setLoadingServices(false);
+    }
+  };
 
   const fetchUpcomingBookings = async (email: string) => {
     try {
@@ -160,21 +141,20 @@ export default function CustomerDashboard() {
       list = list.filter(
         (svc) =>
           svc.name.toLowerCase().includes(q) ||
-          svc.provider.toLowerCase().includes(q)
+          svc.provider_name.toLowerCase().includes(q)
       );
     }
 
     return list;
-  }, [searchQuery, selectedCategory]);
+  }, [services, searchQuery, selectedCategory]);
 
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       // no-op: filtering happens automatically via useMemo
-      // keeping Enter behavior so it feels responsive
     }
   };
 
-  const handleBookNow = (service: (typeof services)[0]) => {
+  const handleBookNow = (service: Service) => {
     navigate(
       `/dashboard/book-now?serviceId=${service.id}&serviceName=${encodeURIComponent(service.name)}`
     );
@@ -193,6 +173,13 @@ export default function CustomerDashboard() {
         minute: "2-digit",
       }),
     };
+  };
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours} hour${hours > 1 ? "s" : ""}`;
   };
 
   const clearFilters = () => {
@@ -307,7 +294,11 @@ export default function CustomerDashboard() {
         </div>
 
         <div className="services-grid">
-          {filteredServices.length === 0 ? (
+          {loadingServices ? (
+            <div className="p-8 text-center col-span-3 text-gray-500">
+              Loading available services...
+            </div>
+          ) : filteredServices.length === 0 ? (
             <div className="p-8 text-center col-span-3">
               <p className="text-gray-500">
                 No services found for your filters.
@@ -320,29 +311,29 @@ export default function CustomerDashboard() {
             filteredServices.map((service) => (
               <div
                 key={service.id}
-                className={`service-card ${!service.available ? "unavailable" : ""}`}
+                className={`service-card ${!service.is_published ? "unavailable" : ""}`}
               >
-                <div className="service-card-image">{service.image}</div>
+                <div className="service-card-image">{detectEmoji(service.name)}</div>
 
                 <div className="service-card-content">
                   <h4>{service.name}</h4>
-                  <p className="provider-name">{service.provider}</p>
+                  <p className="provider-name">{service.provider_name}</p>
 
                   <div className="service-card-meta">
                     <span className="duration">
                       <Clock className="w-4 h-4" />
-                      {service.duration}
+                      {formatDuration(service.duration_minutes)}
                     </span>
                   </div>
 
                   <div className="service-card-footer">
-                    <span className="price">{service.price}</span>
+                    <span className="price">{service.price || "Contact for price"}</span>
                     <button
                       className="btn btn-primary"
-                      disabled={!service.available}
+                      disabled={!service.is_published}
                       onClick={() => handleBookNow(service)}
                     >
-                      {service.available ? "Book Now" : "Unavailable"}
+                      {service.is_published ? "Book Now" : "Unavailable"}
                     </button>
                   </div>
 

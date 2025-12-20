@@ -6,7 +6,7 @@ import os
 # Prefer reading DB URL from environment for flexibility; provide a reasonable default
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+psycopg2://postgres:Sansku%23062005@localhost/odoo_appointment"
+    "postgresql+psycopg2://postgres:d4bfe67c@localhost/odoo_appointment"
 )
 
 engine = create_engine(DATABASE_URL)

@@ -5,7 +5,7 @@ class ServiceCreate(BaseModel):
     name: str
     description: Optional[str] = None
     duration_minutes: int = 30
-    price: Optional[float] = None
+    price: Optional[str] = None
     is_published: bool = False
 
 class ServiceOut(BaseModel):
@@ -13,9 +13,10 @@ class ServiceOut(BaseModel):
     name: str
     description: Optional[str] = None
     duration_minutes: int
-    price: Optional[float] = None
+    price: Optional[str] = None
     is_published: bool
     owner_id: Optional[int] = None
+    provider_name: Optional[str] = "UrbanCare"
     booking_count: int = 0
 
     class Config:
@@ -25,5 +26,5 @@ class ServiceUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     duration_minutes: Optional[int] = None
-    price: Optional[float] = None
+    price: Optional[str] = None
     is_published: Optional[bool] = None

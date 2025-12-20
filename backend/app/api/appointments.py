@@ -340,6 +340,7 @@ def get_services(
     services = query.all()
     result = []
     for service in services:
+        owner = db.query(User).filter(User.id == service.owner_id).first() if service.owner_id else None
         booking_count = db.query(Booking).filter(
             Booking.appointment_type_id == service.id
         ).count()
@@ -348,9 +349,10 @@ def get_services(
             name=service.name,
             description=service.description,
             duration_minutes=service.duration_minutes,
-            price=None,  # Price not in model yet
+            price=service.price,
             is_published=service.is_published,
             owner_id=service.owner_id,
+            provider_name=owner.full_name if owner else "UrbanCare",
             booking_count=booking_count
         ))
     return result
@@ -368,6 +370,7 @@ def create_service(
         name=service_data.name,
         description=service_data.description,
         duration_minutes=service_data.duration_minutes,
+        price=service_data.price,
         is_published=service_data.is_published,
         owner_id=None,  # Would come from auth in production
         resource_assignment_type=ResourceAssignmentType.AUTO
@@ -381,9 +384,10 @@ def create_service(
         name=new_service.name,
         description=new_service.description,
         duration_minutes=new_service.duration_minutes,
-        price=None,
+        price=new_service.price,
         is_published=new_service.is_published,
         owner_id=new_service.owner_id,
+        provider_name="UrbanCare", # New service initially set to default or system
         booking_count=0
     )
 
@@ -409,10 +413,13 @@ def update_service(
         service.duration_minutes = service_data.duration_minutes
     if service_data.is_published is not None:
         service.is_published = service_data.is_published
+    if service_data.price is not None:
+        service.price = service_data.price
     
     db.commit()
     db.refresh(service)
     
+    owner = db.query(User).filter(User.id == service.owner_id).first() if service.owner_id else None
     booking_count = db.query(Booking).filter(
         Booking.appointment_type_id == service.id
     ).count()
@@ -422,9 +429,10 @@ def update_service(
         name=service.name,
         description=service.description,
         duration_minutes=service.duration_minutes,
-        price=None,
+        price=service.price,
         is_published=service.is_published,
         owner_id=service.owner_id,
+        provider_name=owner.full_name if owner else "UrbanCare",
         booking_count=booking_count
     )
 

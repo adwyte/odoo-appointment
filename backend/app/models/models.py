@@ -89,6 +89,7 @@ class AppointmentType(Base):
     name = Column(String, nullable=False)
     description = Column(Text)
     duration_minutes = Column(Integer, default=30)
+    price = Column(String, nullable=True)
     is_published = Column(Boolean, default=False)
     
     owner_id = Column(Integer, ForeignKey('users.id')) # The organiser creating this

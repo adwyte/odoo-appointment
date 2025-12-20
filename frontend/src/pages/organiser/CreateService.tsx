@@ -34,6 +34,7 @@ export default function CreateService() {
                 name: formData.name,
                 description: formData.description || null,
                 duration_minutes: parseInt(formData.duration_minutes.toString()),
+                price: formData.price || null,
                 is_published: formData.is_published
             });
 
