@@ -85,7 +85,6 @@ export default function App() {
           <Route path="availability" element={<PlaceholderPage title="Availability Settings" />} />
           <Route path="calendar" element={<OrganiserCalendar />} />
           <Route path="reports" element={<PlaceholderPage title="Reports" />} />
-          <Route path="settings" element={<PlaceholderPage title="Settings" />} />
         </Route>
 
         {/* Customer */}
