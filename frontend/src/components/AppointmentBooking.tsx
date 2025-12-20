@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+import { useAuth } from "../hooks/useAuth.tsx"; // ✅ Import useAuth
+
 interface Slot {
   id: number;
   start_time: string;
@@ -12,7 +14,8 @@ interface Slot {
 
 const AppointmentBooking: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate(); // ✅ ADD
+  const navigate = useNavigate();
+  const { user } = useAuth(); // ✅ Get logged in user
 
   const serviceId = parseInt(searchParams.get("serviceId") || "1");
   const serviceName = searchParams.get("serviceName") || "General Consultation";
@@ -24,8 +27,19 @@ const AppointmentBooking: React.FC = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
-  const [customerName, setCustomerName] = useState<string>("");
-  const [customerEmail, setCustomerEmail] = useState<string>("");
+
+  // ✅ Pre-fill with user details if available
+  const [customerName, setCustomerName] = useState<string>(user?.full_name || "");
+  const [customerEmail, setCustomerEmail] = useState<string>(user?.email || "");
+
+  // ✅ Update state when user loads (in case auth loads after component)
+  useEffect(() => {
+    if (user) {
+      if (!customerName) setCustomerName(user.full_name);
+      if (!customerEmail) setCustomerEmail(user.email);
+    }
+  }, [user]);
+
   const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
 
   useEffect(() => {
@@ -56,34 +70,34 @@ const AppointmentBooking: React.FC = () => {
   };
 
   const handleBookNow = async () => {
-  if (!selectedSlot || !customerName || !customerEmail) return;
+    if (!selectedSlot || !customerName || !customerEmail) return;
 
-  try {
-    const res = await axios.post("http://localhost:8000/api/bookings", {
-      appointment_type_id: serviceId,
-      start_time: selectedSlot.start_time,
-      customer_name: customerName,
-      customer_email: customerEmail,
-    });
+    try {
+      const res = await axios.post("http://localhost:8000/api/bookings", {
+        appointment_type_id: serviceId,
+        start_time: selectedSlot.start_time,
+        customer_name: customerName,
+        customer_email: customerEmail,
+      });
 
-    const bookingId = res.data?.id;
-    if (!bookingId) {
-      throw new Error("Booking ID not returned from backend");
+      const bookingId = res.data?.id;
+      if (!bookingId) {
+        throw new Error("Booking ID not returned from backend");
+      }
+
+      // ✅ ONLY pass what booking page actually knows
+      navigate("/dashboard/payment", {
+        state: {
+          bookingId,
+          selectedDate,
+          startTime: selectedSlot.start_time,
+        },
+      });
+    } catch (error) {
+      console.error("Booking failed:", error);
+      alert("Booking failed. The slot may be full.");
     }
-
-    // ✅ ONLY pass what booking page actually knows
-    navigate("/dashboard/payment", {
-      state: {
-        bookingId,
-        selectedDate,
-        startTime: selectedSlot.start_time,
-      },
-    });
-  } catch (error) {
-    console.error("Booking failed:", error);
-    alert("Booking failed. The slot may be full.");
-  }
-};
+  };
 
   const formatTime = (timeStr: string) => {
     const date = new Date(timeStr);
@@ -149,11 +163,10 @@ const AppointmentBooking: React.FC = () => {
                 <div className="flex items-center space-x-3 mb-2">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border
-                    ${
-                      currentStep >= step.num
+                    ${currentStep >= step.num
                         ? "bg-beige-100 text-black border-beige-100"
                         : "bg-gray-800 text-gray-400 border-gray-700"
-                    }`}
+                      }`}
                   >
                     {currentStep > step.num ? "✓" : step.num}
                   </div>
@@ -202,10 +215,9 @@ const AppointmentBooking: React.FC = () => {
                       onClick={() => handleSlotClick(slot)}
                       disabled={!slot.is_available}
                       className={`py-3 px-2 rounded-xl text-sm font-semibold transition-all border
-                        ${
-                          !slot.is_available
-                            ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                            : selectedSlot?.id === slot.id
+                        ${!slot.is_available
+                          ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                          : selectedSlot?.id === slot.id
                             ? "bg-black text-white border-black shadow-lg scale-105"
                             : "bg-white text-gray-700 border-gray-200 hover:border-black"
                         }`}
@@ -270,9 +282,8 @@ const AppointmentBooking: React.FC = () => {
               <button
                 onClick={nextStep}
                 disabled={!canProceed()}
-                className={`px-8 py-3 rounded-xl font-bold transition-all ${
-                  canProceed() ? "bg-black text-white hover:bg-gray-800" : "bg-gray-100 text-gray-300 cursor-not-allowed"
-                }`}
+                className={`px-8 py-3 rounded-xl font-bold transition-all ${canProceed() ? "bg-black text-white hover:bg-gray-800" : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                  }`}
               >
                 Next
               </button>
@@ -280,9 +291,8 @@ const AppointmentBooking: React.FC = () => {
               <button
                 onClick={handleBookNow}
                 disabled={!canProceed()}
-                className={`px-8 py-3 rounded-xl font-bold transition-all ${
-                  canProceed() ? "bg-black text-white hover:bg-gray-800" : "bg-gray-100 text-gray-300 cursor-not-allowed"
-                }`}
+                className={`px-8 py-3 rounded-xl font-bold transition-all ${canProceed() ? "bg-black text-white hover:bg-gray-800" : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                  }`}
               >
                 Book Now
               </button>

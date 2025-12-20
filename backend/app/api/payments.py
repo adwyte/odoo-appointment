@@ -13,7 +13,7 @@ class PaymentInitIn(BaseModel):
     booking_id: int
     amount: int
     currency: str = "INR"
-    provider: str = "mock"   # must match enum paymentprovider (yours: "mock")
+    provider: str = "razorpay"   # must match enum paymentprovider (stripe or razorpay)
 
 
 class PaymentSuccessIn(BaseModel):
@@ -45,12 +45,14 @@ def get_checkout_details(
                 u.full_name AS customer_name,
                 u.email AS customer_email,
                 at.name AS service_name,
-                COALESCE(s.price_amount, 1000) AS price,
-                COALESCE(s.currency, 'INR') AS currency
+                COALESCE(
+                    NULLIF(regexp_replace(at.price, '[^0-9]', '', 'g'), '')::int,
+                    1000
+                ) AS price,
+                'INR' AS currency
             FROM bookings b
             JOIN users u ON u.id = b.customer_id
             JOIN appointment_types at ON at.id = b.appointment_type_id
-            LEFT JOIN services s ON lower(s.name) = lower(at.name)
             WHERE b.id = :booking_id
         """),
         {"booking_id": booking_id},
@@ -98,8 +100,8 @@ def init_payment(payload: PaymentInitIn, db: Session = Depends(get_db)):
                     :booking_id,
                     :amount,
                     :currency,
-                    (:provider)::paymentprovider,
-                    ('initiated')::paymentstatus,
+                    :provider,
+                    'PENDING',
                     NULL
                 )
                 RETURNING
@@ -107,8 +109,8 @@ def init_payment(payload: PaymentInitIn, db: Session = Depends(get_db)):
                     booking_id,
                     amount,
                     currency,
-                    provider::text AS provider,
-                    status::text AS status,
+                    provider,
+                    status,
                     provider_ref,
                     created_at
             """),
@@ -124,6 +126,7 @@ def init_payment(payload: PaymentInitIn, db: Session = Depends(get_db)):
         return dict(row)
     except Exception as e:
         db.rollback()
+        print(f"PAYMENT INIT ERROR: {e}")  # Checking actual error
         raise HTTPException(status_code=400, detail=f"Payment init failed: {e}")
 
 
@@ -146,7 +149,7 @@ def mark_payment_success(payload: PaymentSuccessIn, db: Session = Depends(get_db
         db.execute(
             text("""
                 UPDATE payments
-                SET status = ('succeeded')::paymentstatus,
+                SET status = 'PAID',
                     updated_at = NOW()
                 WHERE id = :pid
             """),
@@ -169,6 +172,7 @@ def mark_payment_success(payload: PaymentSuccessIn, db: Session = Depends(get_db
         raise
     except Exception as e:
         db.rollback()
+        print(f"PAYMENT SUCCESS ERROR: {e}")
         raise HTTPException(status_code=400, detail=f"Payment success failed: {e}")
 
 
