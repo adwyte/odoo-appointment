@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:akrSQL%4005@localhost/odoo_appointment")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:d4bfe67c@localhost/odoo_appointment")
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-key")
 JWT_ALGORITHM = "HS256"

@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 from dotenv import load_dotenv
-
+from app.api import payments
 from app.database import get_db
 from app.models.models import User, UserRole, Booking
 from app.api import appointments, auth
@@ -24,9 +24,7 @@ app = FastAPI(title="UrbanCare API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:3000",
+        "*",
     ],
     allow_credentials=True,
     allow_methods=["*"],
