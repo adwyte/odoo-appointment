@@ -3,10 +3,8 @@ import {
   LayoutDashboard,
   Calendar,
   Users,
-  Settings,
   BarChart3,
   Clock,
-  UserCog,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
@@ -26,7 +24,6 @@ const organiserLinks = [
   { to: "/organiser", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/organiser/availability", icon: Clock, label: "Availability" },
   { to: "/organiser/calendar", icon: Calendar, label: "Calendar" },
-  { to: "/organiser/settings", icon: Settings, label: "Settings" },
 ];
 
 const customerLinks = [
