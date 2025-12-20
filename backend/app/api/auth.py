@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from sqlalchemy.orm import Session
 
+from app.core.deps import get_current_user
 from app.core.config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, FRONTEND_URL
 from app.models.models import User, UserRole
 from app.database import get_db
@@ -58,3 +59,11 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     return RedirectResponse(
         f"{FRONTEND_URL}/login/callback?token={jwt_token}"
     )
+
+@router.get("/me")
+def get_me(current_user: dict = Depends(get_current_user)):
+    return {
+        "id": current_user["user_id"],
+        "email": current_user["email"],
+        "role": current_user["role"],
+    }

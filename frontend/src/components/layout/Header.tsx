@@ -1,4 +1,5 @@
-import { Bell, Search, ChevronDown } from "lucide-react";
+import { Bell, Search, ChevronDown, LogOut } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
 
 interface HeaderProps {
   title: string;
@@ -10,6 +11,8 @@ interface HeaderProps {
 }
 
 export default function Header({ title, user }: HeaderProps) {
+  const { logout } = useAuth();
+
   return (
     <header className="dashboard-header">
       <div className="header-left">
@@ -31,19 +34,30 @@ export default function Header({ title, user }: HeaderProps) {
           <span className="notification-badge">3</span>
         </button>
 
+        {/* USER MENU */}
         <div className="user-menu">
           <div className="user-avatar">
             {user?.avatar ? (
               <img src={user.avatar} alt={user.name} />
             ) : (
-              <span>{user?.name?.charAt(0) || "U"}</span>
+              <span>{user?.name?.charAt(0)}</span>
             )}
           </div>
+
           <div className="user-info">
-            <span className="user-name">{user?.name || "User"}</span>
-            <span className="user-role">{user?.role || "Guest"}</span>
+            <span className="user-name">{user?.name}</span>
+            <span className="user-role">{user?.role}</span>
           </div>
-          <ChevronDown className="w-4 h-4" />
+
+          <button
+            onClick={logout}
+            className="ml-3 hover:text-red-600"
+            title="Logout"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+
+          <ChevronDown className="w-4 h-4 ml-2" />
         </div>
       </div>
     </header>

@@ -10,6 +10,7 @@ import {
   LogOut,
   List,
 } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
 
 interface SidebarProps {
   role: "admin" | "organiser" | "customer";
@@ -39,14 +40,17 @@ const customerLinks = [
 ];
 
 export default function Sidebar({ role }: SidebarProps) {
+  const { logout } = useAuth();
+
   const links =
     role === "admin"
       ? adminLinks
       : role === "organiser"
-        ? organiserLinks
-        : customerLinks;
+      ? organiserLinks
+      : customerLinks;
 
-  const basePath = role === "admin" ? "/admin" : role === "organiser" ? "/organiser" : "/dashboard";
+  const basePath =
+    role === "admin" ? "/admin" : role === "organiser" ? "/organiser" : "/dashboard";
 
   return (
     <aside className="sidebar">
@@ -77,7 +81,7 @@ export default function Sidebar({ role }: SidebarProps) {
       </nav>
 
       <div className="sidebar-footer">
-        <button className="nav-link logout-btn">
+        <button onClick={logout} className="nav-link logout-btn">
           <LogOut className="w-5 h-5" />
           <span>Logout</span>
         </button>

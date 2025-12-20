@@ -14,6 +14,16 @@ export default function Signup() {
   });
 
   const handleSignup = async () => {
+    if (!form.email.includes("@")) {
+      alert("Please enter a valid email address");
+      return;
+    }
+
+    if (form.password.length < 8) {
+      alert("Password must be at least 8 characters");
+      return;
+    }
+
     const res = await fetch("http://localhost:8000/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
