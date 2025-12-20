@@ -56,7 +56,7 @@ export default function Sidebar({ role }: SidebarProps) {
       <div className="sidebar-header">
         <div className="logo">
           <Calendar className="w-8 h-8" />
-          <span className="logo-text">Appointly</span>
+          <span className="logo-text">UrbanCare</span>
         </div>
       </div>
 
