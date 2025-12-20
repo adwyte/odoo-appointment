@@ -1,4 +1,5 @@
 import { Calendar, Clock, Search, Filter } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Badge from "../../components/ui/Badge";
 
 const services = [
@@ -44,7 +45,7 @@ const services = [
     rating: 4.6,
     reviews: 67,
     image: "🦷",
-    available: false,
+    available: true,
   },
   {
     id: 5,
@@ -90,6 +91,12 @@ const upcomingBookings = [
 ];
 
 export default function CustomerDashboard() {
+  const navigate = useNavigate();
+
+  const handleBookNow = (service: typeof services[0]) => {
+    navigate(`/dashboard/book-now?serviceId=${service.id}&serviceName=${encodeURIComponent(service.name)}`);
+  };
+
   return (
     <div className="dashboard-page">
       {/* Hero Section */}
@@ -163,6 +170,7 @@ export default function CustomerDashboard() {
                   <button
                     className="btn btn-primary"
                     disabled={!service.available}
+                    onClick={() => handleBookNow(service)}
                   >
                     {service.available ? "Book Now" : "Unavailable"}
                   </button>
@@ -175,3 +183,4 @@ export default function CustomerDashboard() {
     </div>
   );
 }
+
