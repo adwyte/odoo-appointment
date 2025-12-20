@@ -60,9 +60,9 @@ export default function App() {
           }
         >
           <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<UsersPage />} />
+          <Route path="users" element={<PlaceholderPage title="User Management" />} />
           <Route path="providers" element={<PlaceholderPage title="Provider Management" />} />
-          <Route path="appointments" element={<AppointmentsPage />} />
+          <Route path="appointments" element={<PlaceholderPage title="Appointments" />} />
           <Route path="reports" element={<PlaceholderPage title="Reports & Analytics" />} />
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
         </Route>
