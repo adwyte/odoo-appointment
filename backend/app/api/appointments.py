@@ -4,8 +4,14 @@ from datetime import datetime, timedelta, time
 from typing import List
 
 from app.database import get_db
+<<<<<<< HEAD
 from app.models.models import Booking, AppointmentType, Slot, BookingStatus, User, UserRole
 from app.schemas.appointment import SlotOut, BookingCreate, BookingOut, BookingListOut
+=======
+from app.models.models import Booking, AppointmentType, Slot, BookingStatus, User, UserRole, ResourceAssignmentType
+from app.schemas.appointment import SlotOut, BookingCreate, BookingOut
+from app.schemas.service import ServiceCreate, ServiceOut, ServiceUpdate
+>>>>>>> 1861689 (Add dynamic service creation for organisers with customer dashboard integration)
 
 router = APIRouter()
 
@@ -177,3 +183,138 @@ def get_bookings(
         )
 
     return result
+
+
+# ============== SERVICE ENDPOINTS ==============
+
+@router.get("/services", response_model=List[ServiceOut])
+def get_services(
+    published_only: bool = Query(True, description="Only return published services"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all services (appointment types). By default returns only published ones.
+    """
+    query = db.query(AppointmentType)
+    if published_only:
+        query = query.filter(AppointmentType.is_published == True)
+    
+    services = query.all()
+    result = []
+    for service in services:
+        booking_count = db.query(Booking).filter(
+            Booking.appointment_type_id == service.id
+        ).count()
+        result.append(ServiceOut(
+            id=service.id,
+            name=service.name,
+            description=service.description,
+            duration_minutes=service.duration_minutes,
+            price=None,  # Price not in model yet
+            is_published=service.is_published,
+            owner_id=service.owner_id,
+            booking_count=booking_count
+        ))
+    return result
+
+
+@router.post("/services", response_model=ServiceOut)
+def create_service(
+    service_data: ServiceCreate,
+    db: Session = Depends(get_db)
+):
+    """
+    Create a new service (appointment type).
+    """
+    new_service = AppointmentType(
+        name=service_data.name,
+        description=service_data.description,
+        duration_minutes=service_data.duration_minutes,
+        is_published=service_data.is_published,
+        owner_id=None,  # Would come from auth in production
+        resource_assignment_type=ResourceAssignmentType.AUTO
+    )
+    db.add(new_service)
+    db.commit()
+    db.refresh(new_service)
+    
+    return ServiceOut(
+        id=new_service.id,
+        name=new_service.name,
+        description=new_service.description,
+        duration_minutes=new_service.duration_minutes,
+        price=None,
+        is_published=new_service.is_published,
+        owner_id=new_service.owner_id,
+        booking_count=0
+    )
+
+
+@router.put("/services/{service_id}", response_model=ServiceOut)
+def update_service(
+    service_id: int,
+    service_data: ServiceUpdate,
+    db: Session = Depends(get_db)
+):
+    """
+    Update an existing service.
+    """
+    service = db.query(AppointmentType).filter(AppointmentType.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    if service_data.name is not None:
+        service.name = service_data.name
+    if service_data.description is not None:
+        service.description = service_data.description
+    if service_data.duration_minutes is not None:
+        service.duration_minutes = service_data.duration_minutes
+    if service_data.is_published is not None:
+        service.is_published = service_data.is_published
+    
+    db.commit()
+    db.refresh(service)
+    
+    booking_count = db.query(Booking).filter(
+        Booking.appointment_type_id == service.id
+    ).count()
+    
+    return ServiceOut(
+        id=service.id,
+        name=service.name,
+        description=service.description,
+        duration_minutes=service.duration_minutes,
+        price=None,
+        is_published=service.is_published,
+        owner_id=service.owner_id,
+        booking_count=booking_count
+    )
+
+
+@router.delete("/services/{service_id}")
+def delete_service(
+    service_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a service.
+    """
+    service = db.query(AppointmentType).filter(AppointmentType.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    # Check for existing bookings
+    booking_count = db.query(Booking).filter(
+        Booking.appointment_type_id == service_id
+    ).count()
+    
+    if booking_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete service with {booking_count} existing bookings"
+        )
+    
+    db.delete(service)
+    db.commit()
+    
+    return {"message": "Service deleted successfully"}

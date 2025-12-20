@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Calendar,
   Clock,
@@ -7,75 +9,20 @@ import {
   Eye,
   Edit,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
+import axios from "axios";
 import StatCard from "../../components/ui/StatCard";
 import Badge from "../../components/ui/Badge";
 
-const stats = [
-  {
-    title: "Today's Bookings",
-    value: "24",
-    change: "+4 from yesterday",
-    changeType: "positive" as const,
-    icon: Calendar,
-  },
-  {
-    title: "Pending Confirmations",
-    value: "8",
-    change: "Needs attention",
-    changeType: "warning" as const,
-    icon: Clock,
-  },
-  {
-    title: "Total Customers",
-    value: "1,247",
-    change: "+23 this week",
-    changeType: "positive" as const,
-    icon: Users,
-  },
-  {
-    title: "This Month Revenue",
-    value: "$8,420",
-    change: "+12.3% from last month",
-    changeType: "positive" as const,
-    icon: DollarSign,
-  },
-];
-
-const services = [
-  {
-    id: 1,
-    name: "Initial Consultation",
-    duration: "30 min",
-    price: "$50",
-    bookings: 145,
-    status: "Published",
-  },
-  {
-    id: 2,
-    name: "Follow-up Session",
-    duration: "45 min",
-    price: "$75",
-    bookings: 89,
-    status: "Published",
-  },
-  {
-    id: 3,
-    name: "Extended Consultation",
-    duration: "1 hour",
-    price: "$120",
-    bookings: 56,
-    status: "Published",
-  },
-  {
-    id: 4,
-    name: "Group Session",
-    duration: "2 hours",
-    price: "$200",
-    bookings: 23,
-    status: "Draft",
-  },
-];
+interface Service {
+  id: number;
+  name: string;
+  description: string | null;
+  duration_minutes: number;
+  is_published: boolean;
+  booking_count: number;
+}
 
 const todayBookings = [
   {
@@ -116,14 +63,88 @@ const todayBookings = [
 ];
 
 export default function OrganiserDashboard() {
+  const navigate = useNavigate();
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get<Service[]>(
+        "http://localhost:8000/api/services?published_only=false"
+      );
+      setServices(response.data);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const handleDeleteService = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this service?")) return;
+
+    try {
+      await axios.delete(`http://localhost:8000/api/services/${id}`);
+      setServices(services.filter(s => s.id !== id));
+    } catch (error: any) {
+      alert(error.response?.data?.detail || "Failed to delete service");
+    }
+  };
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours} hour${hours > 1 ? "s" : ""}`;
+  };
+
+  const stats = [
+    {
+      title: "Today's Bookings",
+      value: todayBookings.length.toString(),
+      change: "Active schedule",
+      changeType: "positive" as const,
+      icon: Calendar,
+    },
+    {
+      title: "Pending Confirmations",
+      value: todayBookings.filter(b => b.status === "Pending").length.toString(),
+      change: "Needs attention",
+      changeType: "warning" as const,
+      icon: Clock,
+    },
+    {
+      title: "Total Services",
+      value: services.length.toString(),
+      change: `${services.filter(s => s.is_published).length} published`,
+      changeType: "positive" as const,
+      icon: Users,
+    },
+    {
+      title: "Total Bookings",
+      value: services.reduce((acc, s) => acc + s.booking_count, 0).toString(),
+      change: "All time",
+      changeType: "positive" as const,
+      icon: DollarSign,
+    },
+  ];
+
   return (
     <div className="dashboard-page">
       <div className="page-header">
         <div>
-          <h2>Welcome back, Dr. John</h2>
+          <h2>Welcome back, Organiser</h2>
           <p>Manage your appointments and services efficiently.</p>
         </div>
-        <button className="btn btn-primary">
+        <button
+          className="btn btn-primary"
+          onClick={() => navigate("/organiser/services/create")}
+        >
           <Plus className="w-4 h-4" />
           New Service
         </button>
@@ -140,7 +161,7 @@ export default function OrganiserDashboard() {
         <div className="dashboard-card">
           <div className="card-header">
             <h3>Today's Schedule</h3>
-            <span className="date-badge">Dec 20, 2025</span>
+            <span className="date-badge">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           </div>
           <div className="schedule-list">
             {todayBookings.map((booking) => (
@@ -164,41 +185,60 @@ export default function OrganiserDashboard() {
         <div className="dashboard-card">
           <div className="card-header">
             <h3>Your Services</h3>
-            <button className="btn btn-outline">Manage</button>
+            <button className="btn btn-outline" onClick={fetchServices}>
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
           </div>
           <div className="services-list">
-            {services.map((service) => (
-              <div key={service.id} className="service-item">
-                <div className="service-info">
-                  <span className="service-name">{service.name}</span>
-                  <div className="service-meta">
-                    <span>{service.duration}</span>
-                    <span>•</span>
-                    <span>{service.price}</span>
-                    <span>•</span>
-                    <span>{service.bookings} bookings</span>
-                  </div>
-                </div>
-                <div className="service-actions">
-                  <Badge
-                    variant={service.status === "Published" ? "success" : "default"}
-                  >
-                    {service.status}
-                  </Badge>
-                  <div className="action-buttons">
-                    <button className="icon-btn" title="Preview">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button className="icon-btn" title="Edit">
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button className="icon-btn danger" title="Delete">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+            {loading ? (
+              <div className="p-4 text-center text-gray-500">Loading services...</div>
+            ) : services.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">
+                <p>No services yet.</p>
+                <button
+                  className="btn btn-primary mt-2"
+                  onClick={() => navigate("/organiser/services/create")}
+                >
+                  Create Your First Service
+                </button>
               </div>
-            ))}
+            ) : (
+              services.map((service) => (
+                <div key={service.id} className="service-item">
+                  <div className="service-info">
+                    <span className="service-name">{service.name}</span>
+                    <div className="service-meta">
+                      <span>{formatDuration(service.duration_minutes)}</span>
+                      <span>•</span>
+                      <span>{service.booking_count} bookings</span>
+                    </div>
+                  </div>
+                  <div className="service-actions">
+                    <Badge
+                      variant={service.is_published ? "success" : "default"}
+                    >
+                      {service.is_published ? "Published" : "Draft"}
+                    </Badge>
+                    <div className="action-buttons">
+                      <button className="icon-btn" title="Preview">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button className="icon-btn" title="Edit">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        className="icon-btn danger"
+                        title="Delete"
+                        onClick={() => handleDeleteService(service.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -219,7 +259,10 @@ export default function OrganiserDashboard() {
             <Users className="w-6 h-6" />
             <span>Manage Resources</span>
           </button>
-          <button className="action-card">
+          <button
+            className="action-card"
+            onClick={() => navigate("/organiser/services/create")}
+          >
             <Plus className="w-6 h-6" />
             <span>Create Service</span>
           </button>

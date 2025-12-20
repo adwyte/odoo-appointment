@@ -8,7 +8,6 @@ import {
   Clock,
   UserCog,
   LogOut,
-  CalendarPlus,
   List,
 } from "lucide-react";
 
@@ -27,7 +26,6 @@ const adminLinks = [
 
 const organiserLinks = [
   { to: "/organiser", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/organiser/services", icon: CalendarPlus, label: "Services" },
   { to: "/organiser/bookings", icon: List, label: "Bookings" },
   { to: "/organiser/availability", icon: Clock, label: "Availability" },
   { to: "/organiser/calendar", icon: Calendar, label: "Calendar" },
