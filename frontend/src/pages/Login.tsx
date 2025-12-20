@@ -1,24 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useVantaWaves } from "../hooks/useVantaWaves";
+import { api } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
   const vantaRef = useVantaWaves();
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const redirectByRole = (token: string) => {
-    const role = JSON.parse(atob(token.split(".")[1])).role;
-    navigate(
-      role === "admin"
-        ? "/admin"
-        : role === "organiser"
-        ? "/organiser"
-        : "/dashboard"
-    );
-  };
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email.includes("@")) {
@@ -31,20 +24,31 @@ export default function Login() {
       return;
     }
 
-    const res = await fetch("http://localhost:8000/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      setLoading(true);
 
-    if (!res.ok) {
+      // 1️⃣ Login
+      const { access_token } = await api.login(email, password);
+      localStorage.setItem("access_token", access_token);
+
+      // 2️⃣ Hydrate auth state IMMEDIATELY
+      const me = await api.getMe();
+      setUser(me);
+
+      // 3️⃣ Navigate based on role
+      navigate(
+        me.role === "admin"
+          ? "/admin"
+          : me.role === "organiser"
+            ? "/organiser"
+            : "/dashboard",
+        { replace: true }
+      );
+    } catch (err) {
       alert("Invalid email or password");
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    const data = await res.json();
-    localStorage.setItem("access_token", data.access_token);
-    redirectByRole(data.access_token);
   };
 
   const handleGoogleLogin = () => {
@@ -54,7 +58,7 @@ export default function Login() {
   return (
     <div
       ref={vantaRef}
-      className="min-h-screen flex items-center justify-center px-4"
+      className="min-h-screen flex items-center justify-center px-4 relative"
     >
       <div className="absolute inset-0 bg-black/30" />
 
@@ -68,6 +72,7 @@ export default function Login() {
           className="w-full border rounded-lg px-3 py-2 mb-3"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
         />
 
         <input
@@ -76,19 +81,22 @@ export default function Login() {
           className="w-full border rounded-lg px-3 py-2 mb-4"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
         />
 
         <button
           onClick={handleLogin}
-          className="w-full bg-black text-white py-2 rounded-lg mb-3 hover:bg-gray-900"
+          disabled={loading}
+          className="w-full bg-black text-white py-2 rounded-lg mb-3 hover:bg-gray-900 disabled:opacity-60"
         >
-          Sign In
+          {loading ? "Signing in..." : "Sign In"}
         </button>
 
         {/* GOOGLE SIGN IN */}
         <button
           onClick={handleGoogleLogin}
-          className="w-full border py-2 rounded-lg mb-4 hover:bg-gray-50"
+          disabled={loading}
+          className="w-full border py-2 rounded-lg mb-4 hover:bg-gray-50 disabled:opacity-60"
         >
           Continue with Google
         </button>
