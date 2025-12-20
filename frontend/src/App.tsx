@@ -12,7 +12,7 @@ import ReceiptPage from "./pages/dashboard/ReceiptPage";
 import UsersPage from "./pages/dashboard/UsersPage";
 import AppointmentsPage from "./pages/dashboard/AppointmentsPage";
 import ReportsPage from "./pages/dashboard/ReportsPage";
-
+import ForgotPassword from "./pages/ForgotPassword";
 import AppointmentBooking from "./components/AppointmentBooking";
 import MyBookings from "./components/MyBookings";
 import CreateService from "./pages/organiser/CreateService";
@@ -54,6 +54,8 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/bookAppointment" element={<AppointmentBooking />} />
         <Route path="/login/callback" element={<LoginCallback />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
         {/* Admin */}
         <Route
           path="/admin/*"
