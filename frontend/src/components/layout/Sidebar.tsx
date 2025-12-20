@@ -36,7 +36,6 @@ const organiserLinks = [
 const customerLinks = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Home" },
   { to: "/dashboard/my-bookings", icon: Calendar, label: "My Bookings" },
-  { to: "/dashboard/profile", icon: Users, label: "Profile" },
 ];
 
 export default function Sidebar({ role }: SidebarProps) {
@@ -46,8 +45,8 @@ export default function Sidebar({ role }: SidebarProps) {
     role === "admin"
       ? adminLinks
       : role === "organiser"
-      ? organiserLinks
-      : customerLinks;
+        ? organiserLinks
+        : customerLinks;
 
   const basePath =
     role === "admin" ? "/admin" : role === "organiser" ? "/organiser" : "/dashboard";
