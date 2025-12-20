@@ -25,8 +25,23 @@ export default function Signup() {
       return;
     }
 
-    navigate("/login");
+    // Auto-login
+    const loginRes = await fetch("http://localhost:8000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: form.email,
+        password: form.password,
+      }),
+    });
+
+    const data = await loginRes.json();
+    localStorage.setItem("access_token", data.access_token);
+
+    const role = JSON.parse(atob(data.access_token.split(".")[1])).role;
+    navigate(role === "admin" ? "/admin" : role === "organiser" ? "/organiser" : "/dashboard");
   };
+
 
   const handleGoogleSignup = () => {
     window.location.href = "http://localhost:8000/auth/google/login";

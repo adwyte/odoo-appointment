@@ -39,7 +39,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             email=email,
             full_name=name,
             password_hash="GOOGLE_OAUTH",
-            role=UserRole.CUSTOMER,  # ✅ FIX
+            role=UserRole.CUSTOMER,
             is_active=True,
             is_verified=True,
         )
