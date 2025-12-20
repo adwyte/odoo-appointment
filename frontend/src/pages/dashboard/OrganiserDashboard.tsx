@@ -247,7 +247,7 @@ export default function OrganiserDashboard() {
       <div className="quick-actions">
         <h3>Quick Actions</h3>
         <div className="actions-grid">
-          <button className="action-card">
+          <button className="action-card" onClick={() => navigate("/organiser/calendar")}>
             <Calendar className="w-6 h-6" />
             <span>View Calendar</span>
           </button>
