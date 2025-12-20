@@ -144,7 +144,7 @@ def get_bookings(
         appt_type = db.query(AppointmentType).filter(
             AppointmentType.id == booking.appointment_type_id
         ).first()
-
+        
         result.append({
             "id": booking.id,
             "service_name": appt_type.name if appt_type else "Unknown Service",
@@ -152,5 +152,5 @@ def get_bookings(
             "end_time": booking.end_time.isoformat(),
             "status": booking.status.value
         })
-
+    
     return result
