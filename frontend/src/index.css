@@ -11,6 +11,7 @@
 
 /* GLOBAL FONT */
 @layer base {
+
   html,
   body {
     font-family: Inter, system-ui, -apple-system, sans-serif;
@@ -28,7 +29,7 @@
 
     --border: 0 0% 0% / 1;
     --accent: 75% 0.13 200;
-    
+
     --sidebar-width: 260px;
   }
 

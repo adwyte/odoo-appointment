@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import OrganiserDashboard from "./pages/dashboard/OrganiserDashboard";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
+import AppointmentBooking from './components/AppointmentBooking';
 
 // Placeholder components for other pages
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -23,6 +24,9 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
+
+        {/* Book Appointment Route */}
+        <Route path="/bookAppointment" element={<AppointmentBooking />} />
 
         {/* Admin Dashboard Routes */}
         <Route
@@ -70,8 +74,8 @@ function App() {
                 currentRole === "admin"
                   ? "/admin"
                   : currentRole === "organiser"
-                  ? "/organiser"
-                  : "/dashboard"
+                    ? "/organiser"
+                    : "/dashboard"
               }
               replace
             />
