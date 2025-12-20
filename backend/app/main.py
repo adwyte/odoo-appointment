@@ -1,5 +1,3 @@
-import random
-import string
 import os
 import random
 from starlette.middleware.sessions import SessionMiddleware
@@ -94,6 +92,15 @@ class UserResponse(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
 
 # =====================
 # ROUTES
@@ -228,38 +235,40 @@ def get_stats(db: Session = Depends(get_db)):
 
 
 @app.post("/api/auth/forgot-password")
-def forgot_password(email: EmailStr, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
+def forgot_password(
+    data: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.email == data.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     otp = str(random.randint(100000, 999999))
-    RESET_OTP_STORE[email] = otp
+    RESET_OTP_STORE[data.email] = otp
 
-    send_otp_email(email, otp)
+    send_otp_email(data.email, otp)
 
     return {"message": "OTP sent to email"}
 
 
 @app.post("/api/auth/reset-password")
 def reset_password(
-    email: EmailStr,
-    otp: str,
-    new_password: str,
+    data: ResetPasswordRequest,
     db: Session = Depends(get_db),
 ):
-    if RESET_OTP_STORE.get(email) != otp:
+    if RESET_OTP_STORE.get(data.email) != data.otp:
         raise HTTPException(status_code=400, detail="Invalid OTP")
 
-    if len(new_password) < 8:
+    if len(data.new_password) < 8:
         raise HTTPException(status_code=400, detail="Password too short")
 
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(User.email == data.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.password_hash = pwd_context.hash(new_password)
+    user.password_hash = pwd_context.hash(data.new_password)
     db.commit()
 
-    RESET_OTP_STORE.pop(email, None)
+    RESET_OTP_STORE.pop(data.email, None)
     return {"message": "Password reset successful"}
+
