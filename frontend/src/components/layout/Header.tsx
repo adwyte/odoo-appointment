@@ -1,4 +1,4 @@
-import { Bell, Search, ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
 interface HeaderProps {
@@ -20,19 +20,7 @@ export default function Header({ title, user }: HeaderProps) {
       </div>
 
       <div className="header-right">
-        <div className="search-box">
-          <Search className="w-4 h-4 search-icon" />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="search-input"
-          />
-        </div>
-
-        <button className="notification-btn">
-          <Bell className="w-5 h-5" />
-          <span className="notification-badge">3</span>
-        </button>
+        {/* Search and Notifications removed per user request */}
 
         {/* USER MENU */}
         <div className="user-menu">
