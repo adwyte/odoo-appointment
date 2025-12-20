@@ -6,8 +6,8 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:akrSQL%4005@localhost/odoo_appointment")
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-key")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRE_MINUTES = 1440
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
