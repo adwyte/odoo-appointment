@@ -39,26 +39,6 @@ export interface UsersResponse {
   total: number;
 }
 
-export interface Appointment {
-  id: number;
-  customer_name: string;
-  customer_email: string;
-  service_name: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  created_at: string | null;
-}
-
-export interface AppointmentsResponse {
-  appointments: Appointment[];
-  total: number;
-  pending_count: number;
-  confirmed_count: number;
-  cancelled_count: number;
-  completed_count: number;
-}
-
 export const api = {
   // Users
   async getUsers(params?: { limit?: number }): Promise<UsersResponse> {
@@ -126,30 +106,6 @@ export const api = {
     });
     if (!response.ok) {
       throw new Error("Failed to delete user");
-    }
-  },
-
-  // Appointments
-  async getAppointments(params?: { limit?: number; status?: string }): Promise<AppointmentsResponse> {
-    try {
-      const queryParams = new URLSearchParams();
-      if (params?.limit) queryParams.append("limit", params.limit.toString());
-      if (params?.status) queryParams.append("status", params.status);
-      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
-      const response = await fetch(`${API_BASE_URL}/api/admin/appointments${queryString}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch appointments");
-      }
-      return response.json();
-    } catch {
-      return {
-        appointments: [],
-        total: 0,
-        pending_count: 0,
-        confirmed_count: 0,
-        cancelled_count: 0,
-        completed_count: 0,
-      };
     }
   },
 };
