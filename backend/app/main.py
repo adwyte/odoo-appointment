@@ -3,28 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
-<<<<<<< HEAD
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, timedelta
 import os
 
 from passlib.context import CryptContext
 from jose import jwt
 
-from app.models.models import Base, User, UserRole
+from app.models.models import Base, User, UserRole, Booking, BookingStatus, AppointmentType
 from app.api import appointments, auth
 
-=======
-from typing import Optional, List
-from datetime import datetime, date
-import os
-
-from app.models.models import Base, User, UserRole, Booking, BookingStatus, AppointmentType
-from app.api import appointments
->>>>>>> d364fdd (Fix appointment booking - update service IDs to match database)
-
 DATABASE_URL = os.getenv(
-    "DATABASE_URL"
+    "DATABASE_URL",
+    "postgresql+psycopg2://postgres:Sansku%23062005@localhost:5432/odoo_appointment"
 )
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret")
@@ -54,9 +45,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ FIX: register routers
+# Register routers
 app.include_router(appointments.router, prefix="/api")
-app.include_router(auth.router)  # <-- THIS WAS MISSING
+app.include_router(auth.router)
 
 # =====================
 # DEPENDENCY
@@ -117,11 +108,6 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
-<<<<<<< HEAD
-# =====================
-# ROUTES
-# =====================
-=======
 class StatsResponse(BaseModel):
     total_users: int
     total_providers: int
@@ -130,7 +116,35 @@ class StatsResponse(BaseModel):
     active_users: int
     total_organisers: int
     total_customers: int
->>>>>>> d364fdd (Fix appointment booking - update service IDs to match database)
+
+# Appointment schemas
+class AppointmentResponse(BaseModel):
+    id: int
+    customer_name: str
+    customer_email: str
+    service_name: str
+    start_time: datetime
+    end_time: datetime
+    status: str
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class AppointmentListResponse(BaseModel):
+    appointments: List[AppointmentResponse]
+    total: int
+    pending_count: int
+    confirmed_count: int
+    cancelled_count: int
+    completed_count: int
+
+class AppointmentStatusUpdate(BaseModel):
+    status: str
+
+# =====================
+# ROUTES
+# =====================
 
 @app.get("/")
 def root():
@@ -185,9 +199,61 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         }
     )
 
-<<<<<<< HEAD
     return {"access_token": token}
-=======
+
+
+@app.get("/api/users", response_model=List[UserResponse])
+def get_users(limit: int = Query(100, ge=1, le=1000), db: Session = Depends(get_db)):
+    users = db.query(User).limit(limit).all()
+    return [
+        UserResponse(
+            id=u.id,
+            email=u.email,
+            full_name=u.full_name,
+            role=u.role.value,
+            is_active=u.is_active,
+            is_verified=u.is_verified,
+            created_at=u.created_at,
+        )
+        for u in users
+    ]
+
+
+@app.put("/api/users/{user_id}", response_model=UserResponse)
+def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user_data.email is not None:
+        user.email = user_data.email
+    if user_data.full_name is not None:
+        user.full_name = user_data.full_name
+    if user_data.role is not None:
+        role_map = {
+            "customer": UserRole.CUSTOMER,
+            "admin": UserRole.ADMIN,
+            "organiser": UserRole.ORGANISER,
+        }
+        user.role = role_map.get(user_data.role, user.role)
+    if user_data.is_active is not None:
+        user.is_active = user_data.is_active
+    if user_data.is_verified is not None:
+        user.is_verified = user_data.is_verified
+    
+    db.commit()
+    db.refresh(user)
+    
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role.value,
+        is_active=user.is_active,
+        is_verified=user.is_verified,
+        created_at=user.created_at,
+    )
+
 
 @app.delete("/api/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
@@ -216,34 +282,6 @@ def get_stats(db: Session = Depends(get_db)):
         total_organisers=total_organisers,
         total_customers=total_customers
     )
-
-
-# Appointment schemas
-class AppointmentResponse(BaseModel):
-    id: int
-    customer_name: str
-    customer_email: str
-    service_name: str
-    start_time: datetime
-    end_time: datetime
-    status: str
-    created_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class AppointmentListResponse(BaseModel):
-    appointments: List[AppointmentResponse]
-    total: int
-    pending_count: int
-    confirmed_count: int
-    cancelled_count: int
-    completed_count: int
-
-
-class AppointmentStatusUpdate(BaseModel):
-    status: str
 
 
 # Admin Appointments endpoints
@@ -374,4 +412,3 @@ def delete_appointment(appointment_id: int, db: Session = Depends(get_db)):
     db.delete(booking)
     db.commit()
     return {"message": "Appointment deleted successfully"}
->>>>>>> d364fdd (Fix appointment booking - update service IDs to match database)

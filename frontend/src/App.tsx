@@ -6,14 +6,8 @@ import Signup from "./pages/Signup";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import OrganiserDashboard from "./pages/dashboard/OrganiserDashboard";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
-<<<<<<< HEAD
-=======
 import UsersPage from "./pages/dashboard/UsersPage";
 import AppointmentsPage from "./pages/dashboard/AppointmentsPage";
-import AppointmentBooking from './components/AppointmentBooking';
-import MyBookings from './components/MyBookings';
->>>>>>> d364fdd (Fix appointment booking - update service IDs to match database)
-
 import AppointmentBooking from "./components/AppointmentBooking";
 import MyBookings from "./components/MyBookings";
 import Landing from "./pages/Landing";
@@ -65,13 +59,9 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="providers" element={<PlaceholderPage title="Provider Management" />} />
-<<<<<<< HEAD
-          <Route path="appointments" element={<PlaceholderPage title="Appointments" />} />
-=======
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="reports" element={<PlaceholderPage title="Reports & Analytics" />} />
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
->>>>>>> d364fdd (Fix appointment booking - update service IDs to match database)
         </Route>
 
         {/* Organiser */}
