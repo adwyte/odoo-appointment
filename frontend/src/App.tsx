@@ -7,16 +7,13 @@ import Landing from "./pages/Landing";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import OrganiserDashboard from "./pages/dashboard/OrganiserDashboard";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
-<<<<<<< HEAD
 import PaymentPage from "./pages/dashboard/PaymentPage";
+import UsersPage from "./pages/dashboard/UsersPage";
+import AppointmentsPage from "./pages/dashboard/AppointmentsPage";
 
 import AppointmentBooking from "./components/AppointmentBooking";
 import MyBookings from "./components/MyBookings";
-=======
-import AppointmentBooking from './components/AppointmentBooking';
-import MyBookings from './components/MyBookings';
-import CreateService from './pages/organiser/CreateService';
->>>>>>> 1861689 (Add dynamic service creation for organisers with customer dashboard integration)
+import CreateService from "./pages/organiser/CreateService";
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="p-6">
@@ -80,9 +77,6 @@ export default function App() {
           }
         >
           <Route index element={<OrganiserDashboard />} />
-<<<<<<< HEAD
-          <Route path="services" element={<PlaceholderPage title="Services" />} />
-=======
           <Route path="services" element={<PlaceholderPage title="Service Management" />} />
           <Route path="services/create" element={<CreateService />} />
           <Route path="bookings" element={<PlaceholderPage title="Bookings" />} />
@@ -90,7 +84,6 @@ export default function App() {
           <Route path="calendar" element={<PlaceholderPage title="Calendar View" />} />
           <Route path="reports" element={<PlaceholderPage title="Reports" />} />
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
->>>>>>> 1861689 (Add dynamic service creation for organisers with customer dashboard integration)
         </Route>
 
         {/* Customer */}
