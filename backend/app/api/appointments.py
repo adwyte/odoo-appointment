@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, time
 from typing import List
-
+from app.database import get_db
 from app.models.models import Booking, AppointmentType, Slot, BookingStatus, User, UserRole, ResourceAssignmentType
-from app.schemas.appointment import SlotOut, BookingCreate, BookingOut
+from app.schemas.appointment import SlotOut, BookingCreate, BookingOut, BookingListOut
 from app.schemas.service import ServiceCreate, ServiceOut, ServiceUpdate
 
 
