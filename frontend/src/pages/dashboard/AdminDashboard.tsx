@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Users, Calendar, UserCog, TrendingUp, RefreshCw } from "lucide-react";
 import StatCard from "../../components/ui/StatCard";
 import DataTable from "../../components/ui/DataTable";
 import Badge from "../../components/ui/Badge";
 import { api } from "../../services/api";
-import type { User, UserStats } from "../../services/api";
+import type { User, UserStats, Appointment } from "../../services/api";
 
 interface DisplayUser {
   id: number;
@@ -15,62 +16,33 @@ interface DisplayUser {
   joinedAt: string;
 }
 
-const recentAppointments = [
-  {
-    id: 1,
-    customer: "Alice Johnson",
-    service: "Hair Styling",
-    provider: "Style Studio",
-    date: "Dec 20, 2025",
-    time: "10:00 AM",
-    status: "Confirmed",
-  },
-  {
-    id: 2,
-    customer: "Bob Smith",
-    service: "Consultation",
-    provider: "Dr. Sarah",
-    date: "Dec 20, 2025",
-    time: "11:30 AM",
-    status: "Pending",
-  },
-  {
-    id: 3,
-    customer: "Carol White",
-    service: "Massage Therapy",
-    provider: "Wellness Center",
-    date: "Dec 20, 2025",
-    time: "2:00 PM",
-    status: "Confirmed",
-  },
-  {
-    id: 4,
-    customer: "David Brown",
-    service: "Dental Checkup",
-    provider: "Dr. Mike",
-    date: "Dec 21, 2025",
-    time: "9:00 AM",
-    status: "Cancelled",
-  },
-];
+interface DisplayAppointment {
+  id: number;
+  customer: string;
+  service: string;
+  date: string;
+  time: string;
+  status: string;
+}
 
 const appointmentColumns = [
   { key: "customer", header: "Customer" },
   { key: "service", header: "Service" },
-  { key: "provider", header: "Provider" },
   { key: "date", header: "Date" },
   { key: "time", header: "Time" },
   {
     key: "status",
     header: "Status",
-    render: (apt: (typeof recentAppointments)[0]) => (
+    render: (apt: DisplayAppointment) => (
       <Badge
         variant={
           apt.status === "Confirmed"
             ? "success"
             : apt.status === "Pending"
               ? "warning"
-              : "error"
+              : apt.status === "Cancelled"
+                ? "error"
+                : "success"
         }
       >
         {apt.status}
@@ -80,7 +52,9 @@ const appointmentColumns = [
 ];
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<DisplayUser[]>([]);
+  const [appointments, setAppointments] = useState<DisplayAppointment[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,16 +77,38 @@ export default function AdminDashboard() {
     joinedAt: formatDate(user.created_at),
   });
 
+  const formatDateTime = (dateTimeStr: string) => {
+    const dt = new Date(dateTimeStr);
+    return {
+      date: dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      time: dt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+    };
+  };
+
+  const transformAppointment = (apt: Appointment): DisplayAppointment => {
+    const { date, time } = formatDateTime(apt.start_time);
+    return {
+      id: apt.id,
+      customer: apt.customer_name,
+      service: apt.service_name,
+      date,
+      time,
+      status: apt.status.charAt(0).toUpperCase() + apt.status.slice(1),
+    };
+  };
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [usersResponse, statsResponse] = await Promise.all([
+      const [usersResponse, statsResponse, appointmentsResponse] = await Promise.all([
         api.getUsers({ limit: 5 }),
         api.getUserStats(),
+        api.getAppointments({ limit: 5 }),
       ]);
       setUsers(usersResponse.users.map(transformUser));
       setStats(statsResponse);
+      setAppointments(appointmentsResponse.appointments.map(transformAppointment));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch data");
     } finally {
@@ -157,9 +153,9 @@ export default function AdminDashboard() {
     },
     {
       title: "Total Appointments",
-      value: "0",
-      change: "Coming soon",
-      changeType: "neutral" as const,
+      value: stats?.total_appointments?.toString() || "0",
+      change: "All bookings",
+      changeType: "positive" as const,
       icon: Calendar,
     },
     {
@@ -201,7 +197,7 @@ export default function AdminDashboard() {
         <div className="dashboard-card">
           <div className="card-header">
             <h3>Recent Users</h3>
-            <button className="btn btn-outline">View All</button>
+            <button className="btn btn-outline" onClick={() => navigate("/admin/users")}>View All</button>
           </div>
           {loading ? (
             <div className="loading-state">Loading users...</div>
@@ -215,9 +211,15 @@ export default function AdminDashboard() {
         <div className="dashboard-card">
           <div className="card-header">
             <h3>Recent Appointments</h3>
-            <button className="btn btn-outline">View All</button>
+            <button className="btn btn-outline" onClick={() => navigate("/admin/appointments")}>View All</button>
           </div>
-          <DataTable columns={appointmentColumns} data={recentAppointments} />
+          {loading ? (
+            <div className="loading-state">Loading appointments...</div>
+          ) : appointments.length > 0 ? (
+            <DataTable columns={appointmentColumns} data={appointments} />
+          ) : (
+            <div className="empty-state">No appointments found</div>
+          )}
         </div>
       </div>
     </div>

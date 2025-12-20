@@ -10,6 +10,20 @@ export interface User {
   created_at: string | null;
 }
 
+export interface CreateUserData {
+  email: string;
+  password: string;
+  full_name: string;
+  role: "customer" | "admin" | "organiser";
+}
+
+export interface UpdateUserData {
+  email?: string;
+  full_name?: string;
+  role?: "customer" | "admin" | "organiser";
+  is_active?: boolean;
+}
+
 export interface UserStats {
   total_users: number;
   total_providers?: number;
@@ -25,11 +39,32 @@ export interface UsersResponse {
   total: number;
 }
 
+export interface Appointment {
+  id: number;
+  customer_name: string;
+  customer_email: string;
+  service_name: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  created_at: string | null;
+}
+
+export interface AppointmentsResponse {
+  appointments: Appointment[];
+  total: number;
+  pending_count: number;
+  confirmed_count: number;
+  cancelled_count: number;
+  completed_count: number;
+}
+
 export const api = {
   // Users
   async getUsers(params?: { limit?: number }): Promise<UsersResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users`);
+      const queryParams = params?.limit ? `?limit=${params.limit}` : "";
+      const response = await fetch(`${API_BASE_URL}/api/users${queryParams}`);
       if (!response.ok) {
         throw new Error("Failed to fetch users");
       }
@@ -59,26 +94,28 @@ export const api = {
     }
   },
 
-  async createUser(userData: Partial<User>): Promise<User> {
+  async createUser(userData: CreateUserData): Promise<User> {
     const response = await fetch(`${API_BASE_URL}/api/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
     if (!response.ok) {
-      throw new Error("Failed to create user");
+      const error = await response.json().catch(() => ({ detail: "Failed to create user" }));
+      throw new Error(error.detail || "Failed to create user");
     }
     return response.json();
   },
 
-  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+  async updateUser(id: number, userData: UpdateUserData): Promise<User> {
     const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
     if (!response.ok) {
-      throw new Error("Failed to update user");
+      const error = await response.json().catch(() => ({ detail: "Failed to update user" }));
+      throw new Error(error.detail || "Failed to update user");
     }
     return response.json();
   },
@@ -89,6 +126,30 @@ export const api = {
     });
     if (!response.ok) {
       throw new Error("Failed to delete user");
+    }
+  },
+
+  // Appointments
+  async getAppointments(params?: { limit?: number; status?: string }): Promise<AppointmentsResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.limit) queryParams.append("limit", params.limit.toString());
+      if (params?.status) queryParams.append("status", params.status);
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+      const response = await fetch(`${API_BASE_URL}/api/admin/appointments${queryString}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch appointments");
+      }
+      return response.json();
+    } catch {
+      return {
+        appointments: [],
+        total: 0,
+        pending_count: 0,
+        confirmed_count: 0,
+        cancelled_count: 0,
+        completed_count: 0,
+      };
     }
   },
 };
