@@ -5,6 +5,7 @@ import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import OrganiserDashboard from "./pages/dashboard/OrganiserDashboard";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
 import AppointmentBooking from './components/AppointmentBooking';
+import MyBookings from './components/MyBookings';
 
 // Placeholder components for other pages
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -62,7 +63,7 @@ function App() {
         >
           <Route index element={<CustomerDashboard />} />
           <Route path="book-now" element={<AppointmentBooking />} />
-          <Route path="my-bookings" element={<PlaceholderPage title="My Bookings" />} />
+          <Route path="my-bookings" element={<MyBookings />} />
           <Route path="profile" element={<PlaceholderPage title="My Profile" />} />
         </Route>
 

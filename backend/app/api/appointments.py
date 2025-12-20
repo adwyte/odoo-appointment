@@ -5,7 +5,7 @@ from typing import List
 
 from app.database import get_db
 from app.models.models import Booking, AppointmentType, Slot, BookingStatus, User, UserRole
-from app.schemas.appointment import SlotOut, BookingCreate, BookingOut
+from app.schemas.appointment import SlotOut, BookingCreate, BookingOut, BookingListOut
 
 router = APIRouter()
 
@@ -117,3 +117,42 @@ def create_booking(
         status=new_booking.status.value,
         customer_name=customer.full_name
     )
+
+
+@router.get("/bookings", response_model=List[BookingListOut])
+def get_bookings(
+    customer_email: str = Query(..., description="Customer email to fetch bookings for"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all bookings for a customer by email.
+    """
+    from app.schemas.appointment import BookingListOut
+    
+    # Find customer
+    customer = db.query(User).filter(User.email == customer_email).first()
+    if not customer:
+        return []
+    
+    # Get bookings
+    bookings = db.query(Booking).filter(
+        Booking.customer_id == customer.id
+    ).order_by(Booking.start_time.desc()).all()
+    
+    result = []
+    for booking in bookings:
+        # Get service name
+        appt_type = db.query(AppointmentType).filter(
+            AppointmentType.id == booking.appointment_type_id
+        ).first()
+        
+        result.append(BookingListOut(
+            id=booking.id,
+            service_name=appt_type.name if appt_type else "Unknown Service",
+            start_time=booking.start_time,
+            end_time=booking.end_time,
+            status=booking.status.value,
+            created_at=booking.created_at
+        ))
+    
+    return result
