@@ -1,81 +1,18 @@
-import { Users, Calendar, UserCog, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Users, Calendar, UserCog, TrendingUp, RefreshCw } from "lucide-react";
 import StatCard from "../../components/ui/StatCard";
 import DataTable from "../../components/ui/DataTable";
 import Badge from "../../components/ui/Badge";
+import { api, User, UserStats } from "../../services/api";
 
-const stats = [
-  {
-    title: "Total Users",
-    value: "2,847",
-    change: "+12.5% from last month",
-    changeType: "positive" as const,
-    icon: Users,
-  },
-  {
-    title: "Service Providers",
-    value: "156",
-    change: "+3.2% from last month",
-    changeType: "positive" as const,
-    icon: UserCog,
-  },
-  {
-    title: "Total Appointments",
-    value: "12,584",
-    change: "+18.7% from last month",
-    changeType: "positive" as const,
-    icon: Calendar,
-  },
-  {
-    title: "Revenue",
-    value: "$45,230",
-    change: "+8.1% from last month",
-    changeType: "positive" as const,
-    icon: TrendingUp,
-  },
-];
-
-const recentUsers = [
-  {
-    id: 1,
-    name: "Alice Johnson",
-    email: "alice@example.com",
-    role: "Customer",
-    status: "Active",
-    joinedAt: "Dec 19, 2025",
-  },
-  {
-    id: 2,
-    name: "Bob Smith",
-    email: "bob@example.com",
-    role: "Organiser",
-    status: "Active",
-    joinedAt: "Dec 18, 2025",
-  },
-  {
-    id: 3,
-    name: "Carol White",
-    email: "carol@example.com",
-    role: "Customer",
-    status: "Pending",
-    joinedAt: "Dec 18, 2025",
-  },
-  {
-    id: 4,
-    name: "David Brown",
-    email: "david@example.com",
-    role: "Customer",
-    status: "Active",
-    joinedAt: "Dec 17, 2025",
-  },
-  {
-    id: 5,
-    name: "Emma Davis",
-    email: "emma@example.com",
-    role: "Organiser",
-    status: "Active",
-    joinedAt: "Dec 17, 2025",
-  },
-];
+interface DisplayUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  joinedAt: string;
+}
 
 const recentAppointments = [
   {
@@ -116,22 +53,6 @@ const recentAppointments = [
   },
 ];
 
-const userColumns = [
-  { key: "name", header: "Name" },
-  { key: "email", header: "Email" },
-  { key: "role", header: "Role" },
-  {
-    key: "status",
-    header: "Status",
-    render: (user: (typeof recentUsers)[0]) => (
-      <Badge variant={user.status === "Active" ? "success" : "warning"}>
-        {user.status}
-      </Badge>
-    ),
-  },
-  { key: "joinedAt", header: "Joined" },
-];
-
 const appointmentColumns = [
   { key: "customer", header: "Customer" },
   { key: "service", header: "Service" },
@@ -158,15 +79,119 @@ const appointmentColumns = [
 ];
 
 export default function AdminDashboard() {
+  const [users, setUsers] = useState<DisplayUser[]>([]);
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const transformUser = (user: User): DisplayUser => ({
+    id: user.id,
+    name: user.full_name,
+    email: user.email,
+    role: user.role.charAt(0).toUpperCase() + user.role.slice(1),
+    status: user.is_active ? "Active" : "Inactive",
+    joinedAt: formatDate(user.created_at),
+  });
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [usersResponse, statsResponse] = await Promise.all([
+        api.getUsers({ limit: 5 }),
+        api.getUserStats(),
+      ]);
+      setUsers(usersResponse.users.map(transformUser));
+      setStats(statsResponse);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const userColumns = [
+    { key: "name", header: "Name" },
+    { key: "email", header: "Email" },
+    { key: "role", header: "Role" },
+    {
+      key: "status",
+      header: "Status",
+      render: (user: DisplayUser) => (
+        <Badge variant={user.status === "Active" ? "success" : "warning"}>
+          {user.status}
+        </Badge>
+      ),
+    },
+    { key: "joinedAt", header: "Joined" },
+  ];
+
+  const statsData = [
+    {
+      title: "Total Users",
+      value: stats?.total_users?.toString() || "0",
+      change: `${stats?.active_users || 0} active`,
+      changeType: "positive" as const,
+      icon: Users,
+    },
+    {
+      title: "Service Providers",
+      value: stats?.total_organisers?.toString() || "0",
+      change: "Organisers",
+      changeType: "positive" as const,
+      icon: UserCog,
+    },
+    {
+      title: "Total Appointments",
+      value: "0",
+      change: "Coming soon",
+      changeType: "neutral" as const,
+      icon: Calendar,
+    },
+    {
+      title: "Customers",
+      value: stats?.total_customers?.toString() || "0",
+      change: "Registered customers",
+      changeType: "positive" as const,
+      icon: TrendingUp,
+    },
+  ];
+
   return (
     <div className="dashboard-page">
       <div className="page-header">
-        <h2>Welcome back, Admin</h2>
-        <p>Here's what's happening with your platform today.</p>
+        <div>
+          <h2>Welcome back, Admin</h2>
+          <p>Here's what's happening with your platform today.</p>
+        </div>
+        <button className="btn btn-outline" onClick={fetchData} disabled={loading}>
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
       </div>
 
+      {error && (
+        <div className="error-banner">
+          <p>Error: {error}</p>
+          <button onClick={fetchData}>Retry</button>
+        </div>
+      )}
+
       <div className="stats-grid">
-        {stats.map((stat) => (
+        {statsData.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}
       </div>
@@ -177,7 +202,13 @@ export default function AdminDashboard() {
             <h3>Recent Users</h3>
             <button className="btn btn-outline">View All</button>
           </div>
-          <DataTable columns={userColumns} data={recentUsers} />
+          {loading ? (
+            <div className="loading-state">Loading users...</div>
+          ) : users.length > 0 ? (
+            <DataTable columns={userColumns} data={users} />
+          ) : (
+            <div className="empty-state">No users found</div>
+          )}
         </div>
 
         <div className="dashboard-card">
