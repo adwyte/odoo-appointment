@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from sqlalchemy.orm import Session
+import os
 
-from app.core.deps import get_current_user
-from app.core.config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, FRONTEND_URL
 from app.models.models import User, UserRole
 from app.database import get_db
 from app.core.security import create_access_token
@@ -12,10 +11,11 @@ from app.core.security import create_access_token
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 oauth = OAuth()
+
 oauth.register(
     name="google",
-    client_id=GOOGLE_CLIENT_ID,
-    client_secret=GOOGLE_CLIENT_SECRET,
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
     client_kwargs={"scope": "openid email profile"},
 )
@@ -25,13 +25,16 @@ async def google_login(request: Request):
     redirect_uri = request.url_for("google_callback")
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
-@router.get("/google/callback")
+@router.get("/google/callback", name="google_callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
     token = await oauth.google.authorize_access_token(request)
-    userinfo = token["userinfo"]
+    userinfo = token.get("userinfo")
+
+    if not userinfo:
+        raise HTTPException(status_code=400, detail="Google auth failed")
 
     email = userinfo["email"]
-    name = userinfo["name"]
+    name = userinfo.get("name", email.split("@")[0])
 
     user = db.query(User).filter(User.email == email).first()
 
@@ -57,13 +60,5 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     )
 
     return RedirectResponse(
-        f"{FRONTEND_URL}/login/callback?token={jwt_token}"
+        f"http://localhost:5173/login/callback?token={jwt_token}"
     )
-
-@router.get("/me")
-def get_me(current_user: dict = Depends(get_current_user)):
-    return {
-        "id": current_user["user_id"],
-        "email": current_user["email"],
-        "role": current_user["role"],
-    }

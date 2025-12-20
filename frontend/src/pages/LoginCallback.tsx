@@ -1,8 +1,11 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
 
 export default function LoginCallback() {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -15,13 +18,20 @@ export default function LoginCallback() {
 
     localStorage.setItem("access_token", token);
 
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const role = payload.role;
-
-    if (role === "admin") navigate("/admin");
-    else if (role === "organiser") navigate("/organiser");
-    else navigate("/dashboard");
+    api.getMe()
+      .then((user) => {
+        setUser(user);
+        navigate(
+          user.role === "admin"
+            ? "/admin"
+            : user.role === "organiser"
+            ? "/organiser"
+            : "/dashboard",
+          { replace: true }
+        );
+      })
+      .catch(() => navigate("/login"));
   }, []);
 
-  return null;
+  return <div className="min-h-screen flex items-center justify-center">Signing you in…</div>;
 }

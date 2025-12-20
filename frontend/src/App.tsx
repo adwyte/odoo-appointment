@@ -3,7 +3,7 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Landing from "./pages/Landing";
-
+import LoginCallback from "./pages/LoginCallback";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import OrganiserDashboard from "./pages/dashboard/OrganiserDashboard";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
@@ -50,7 +50,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/bookAppointment" element={<AppointmentBooking />} />
-
+        <Route path="/login/callback" element={<LoginCallback />} />
         {/* Admin */}
         <Route
           path="/admin/*"

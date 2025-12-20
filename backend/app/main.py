@@ -1,3 +1,8 @@
+import random
+import string
+import os
+from starlette.middleware.sessions import SessionMiddleware
+
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -5,7 +10,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 from dotenv import load_dotenv
-
+RESET_OTP_STORE: dict[str, str] = {}
 from app.database import get_db
 from app.models.models import User, UserRole, Booking
 from app.api import appointments, auth
@@ -20,6 +25,11 @@ load_dotenv()
 # =====================
 
 app = FastAPI(title="UrbanCare API", version="1.0.0")
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET", "dev-session-secret"),
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -211,3 +221,43 @@ def get_stats(db: Session = Depends(get_db)):
         "total_customers": db.query(User).filter(User.role == UserRole.CUSTOMER).count(),
         "active_users": db.query(User).filter(User.is_active == True).count(),
     }
+
+@app.post("/api/auth/forgot-password")
+def forgot_password(email: EmailStr, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    otp = "".join(random.choices(string.digits, k=6))
+    RESET_OTP_STORE[email] = otp
+
+    # TODO: send via email (for now console)
+    print(f"[OTP] {email}: {otp}")
+
+    return {"message": "OTP sent to registered email"}
+
+@app.post("/api/auth/reset-password")
+def reset_password(
+    email: EmailStr,
+    otp: str,
+    new_password: str,
+    db: Session = Depends(get_db),
+):
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password too short")
+
+    stored_otp = RESET_OTP_STORE.get(email)
+    if not stored_otp or stored_otp != otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.password_hash = hash_password(new_password)
+    db.commit()
+
+    RESET_OTP_STORE.pop(email, None)
+
+    return {"message": "Password reset successful"}
+
