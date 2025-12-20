@@ -18,7 +18,6 @@ interface SidebarProps {
 const adminLinks = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/admin/users", icon: Users, label: "Users" },
-  { to: "/admin/providers", icon: UserCog, label: "Providers" },
   { to: "/admin/appointments", icon: Calendar, label: "Appointments" },
   { to: "/admin/reports", icon: BarChart3, label: "Reports" },
   { to: "/admin/settings", icon: Settings, label: "Settings" },

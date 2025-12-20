@@ -10,6 +10,7 @@ import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
 import PaymentPage from "./pages/dashboard/PaymentPage";
 import UsersPage from "./pages/dashboard/UsersPage";
 import AppointmentsPage from "./pages/dashboard/AppointmentsPage";
+import ReportsPage from "./pages/dashboard/ReportsPage";
 
 import AppointmentBooking from "./components/AppointmentBooking";
 import MyBookings from "./components/MyBookings";
@@ -61,9 +62,8 @@ export default function App() {
         >
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<UsersPage />} />
-          <Route path="providers" element={<PlaceholderPage title="Provider Management" />} />
           <Route path="appointments" element={<AppointmentsPage />} />
-          <Route path="reports" element={<PlaceholderPage title="Reports & Analytics" />} />
+          <Route path="reports" element={<ReportsPage />} />
           <Route path="settings" element={<PlaceholderPage title="Settings" />} />
         </Route>
 
