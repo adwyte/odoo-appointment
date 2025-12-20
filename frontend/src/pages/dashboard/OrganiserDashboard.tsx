@@ -251,7 +251,7 @@ export default function OrganiserDashboard() {
             <Calendar className="w-6 h-6" />
             <span>View Calendar</span>
           </button>
-          <button className="action-card">
+          <button className="action-card" onClick={() => navigate("/organiser/availability")}>
             <Clock className="w-6 h-6" />
             <span>Set Availability</span>
           </button>
