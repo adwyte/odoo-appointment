@@ -42,6 +42,8 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<UserFormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
+  const [appointmentCount, setAppointmentCount] = useState(0);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -121,9 +123,11 @@ export default function UsersPage() {
 
     setSubmitting(true);
     try {
-      await api.deleteUser(selectedUser.id);
+      // Use force=true to delete user along with their appointments
+      await api.deleteUser(selectedUser.id, true);
       setShowDeleteModal(false);
       setSelectedUser(null);
+      setAppointmentCount(0);
       fetchUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete user");
@@ -144,10 +148,20 @@ export default function UsersPage() {
     setShowEditModal(true);
   };
 
-  // Open Delete Modal
-  const openDeleteModal = (user: User) => {
+  // Open Delete Modal - fetch appointment count first
+  const openDeleteModal = async (user: User) => {
     setSelectedUser(user);
+    setLoadingAppointments(true);
     setShowDeleteModal(true);
+    
+    try {
+      const result = await api.getUserAppointmentCount(user.id);
+      setAppointmentCount(result.appointment_count);
+    } catch {
+      setAppointmentCount(0);
+    } finally {
+      setLoadingAppointments(false);
+    }
   };
 
   const getRoleIcon = (role: string) => {
@@ -477,17 +491,38 @@ export default function UsersPage() {
               </button>
             </div>
             <div className="modal-body">
-              <div className="delete-warning">
-                <Trash2 className="w-12 h-12 text-red-500" />
-                <p>
-                  Are you sure you want to delete{" "}
-                  <strong>{selectedUser.full_name}</strong>?
-                </p>
-                <p className="text-sm text-gray-500">
-                  This action cannot be undone. All data associated with this
-                  user will be permanently removed.
-                </p>
-              </div>
+              {loadingAppointments ? (
+                <div className="loading-state">Checking appointments...</div>
+              ) : (
+                <div className="delete-warning">
+                  <Trash2 className="w-12 h-12 text-red-500" />
+                  <p>
+                    Are you sure you want to delete{" "}
+                    <strong>{selectedUser.full_name}</strong>?
+                  </p>
+                  {appointmentCount > 0 && (
+                    <div className="appointment-warning" style={{
+                      background: "#fef3c7",
+                      border: "1px solid #f59e0b",
+                      borderRadius: "8px",
+                      padding: "12px",
+                      marginTop: "12px",
+                      marginBottom: "12px"
+                    }}>
+                      <p style={{ color: "#92400e", fontWeight: 600, marginBottom: "4px" }}>
+                        ⚠️ Warning: This user has {appointmentCount} appointment(s)
+                      </p>
+                      <p style={{ color: "#92400e", fontSize: "14px" }}>
+                        Deleting this user will also delete all their appointments permanently.
+                      </p>
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-500">
+                    This action cannot be undone. All data associated with this
+                    user will be permanently removed.
+                  </p>
+                </div>
+              )}
             </div>
             <div className="modal-footer">
               <button
@@ -499,9 +534,9 @@ export default function UsersPage() {
               <button
                 className="btn btn-danger"
                 onClick={handleDeleteUser}
-                disabled={submitting}
+                disabled={submitting || loadingAppointments}
               >
-                {submitting ? "Deleting..." : "Delete User"}
+                {submitting ? "Deleting..." : appointmentCount > 0 ? "Delete User & Appointments" : "Delete User"}
               </button>
             </div>
           </div>

@@ -180,6 +180,149 @@ def get_bookings(
     return result
 
 
+# ============== ADMIN APPOINTMENTS ENDPOINTS ==============
+
+@router.get("/admin/appointments")
+def get_admin_appointments(
+    status: str = Query(None, description="Filter by status"),
+    date_from: str = Query(None, description="Filter from date (YYYY-MM-DD)"),
+    date_to: str = Query(None, description="Filter to date (YYYY-MM-DD)"),
+    search: str = Query(None, description="Search by customer name or email"),
+    limit: int = Query(100, description="Limit results"),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all appointments for admin dashboard with filtering.
+    """
+    query = db.query(Booking)
+
+    # Filter by status
+    if status:
+        status_map = {
+            "pending": BookingStatus.PENDING,
+            "confirmed": BookingStatus.CONFIRMED,
+            "cancelled": BookingStatus.CANCELLED,
+            "completed": BookingStatus.COMPLETED,
+        }
+        if status in status_map:
+            query = query.filter(Booking.status == status_map[status])
+
+    # Filter by date range
+    if date_from:
+        try:
+            from_date = datetime.strptime(date_from, "%Y-%m-%d")
+            query = query.filter(Booking.start_time >= from_date)
+        except ValueError:
+            pass
+
+    if date_to:
+        try:
+            to_date = datetime.strptime(date_to, "%Y-%m-%d") + timedelta(days=1)
+            query = query.filter(Booking.start_time < to_date)
+        except ValueError:
+            pass
+
+    # Get all bookings first for search filtering and counts
+    all_bookings = query.order_by(Booking.start_time.desc()).all()
+
+    # Build response with customer info
+    appointments = []
+    for booking in all_bookings:
+        customer = db.query(User).filter(User.id == booking.customer_id).first()
+        appt_type = db.query(AppointmentType).filter(
+            AppointmentType.id == booking.appointment_type_id
+        ).first()
+
+        customer_name = customer.full_name if customer else "Unknown"
+        customer_email = customer.email if customer else "unknown@email.com"
+        service_name = appt_type.name if appt_type else "Unknown Service"
+
+        # Search filter
+        if search:
+            search_lower = search.lower()
+            if search_lower not in customer_name.lower() and search_lower not in customer_email.lower():
+                continue
+
+        appointments.append({
+            "id": booking.id,
+            "customer_name": customer_name,
+            "customer_email": customer_email,
+            "service_name": service_name,
+            "start_time": booking.start_time.isoformat(),
+            "end_time": booking.end_time.isoformat(),
+            "status": booking.status.value,
+            "created_at": None,
+        })
+
+    # Apply limit
+    limited_appointments = appointments[:limit]
+
+    # Calculate counts from all (non-search-filtered) bookings
+    all_statuses = [b.status for b in all_bookings]
+    pending_count = sum(1 for s in all_statuses if s == BookingStatus.PENDING)
+    confirmed_count = sum(1 for s in all_statuses if s == BookingStatus.CONFIRMED)
+    cancelled_count = sum(1 for s in all_statuses if s == BookingStatus.CANCELLED)
+    completed_count = sum(1 for s in all_statuses if s == BookingStatus.COMPLETED)
+
+    return {
+        "appointments": limited_appointments,
+        "total": len(appointments),
+        "pending_count": pending_count,
+        "confirmed_count": confirmed_count,
+        "cancelled_count": cancelled_count,
+        "completed_count": completed_count,
+    }
+
+
+@router.put("/admin/appointments/{appointment_id}/status")
+def update_appointment_status(
+    appointment_id: int,
+    status_data: dict,
+    db: Session = Depends(get_db),
+):
+    """
+    Update appointment status.
+    """
+    booking = db.query(Booking).filter(Booking.id == appointment_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    status_map = {
+        "pending": BookingStatus.PENDING,
+        "confirmed": BookingStatus.CONFIRMED,
+        "cancelled": BookingStatus.CANCELLED,
+        "completed": BookingStatus.COMPLETED,
+    }
+
+    new_status = status_data.get("status")
+    if new_status not in status_map:
+        raise HTTPException(status_code=400, detail="Invalid status")
+
+    booking.status = status_map[new_status]
+    db.commit()
+    db.refresh(booking)
+
+    return {"message": "Status updated successfully", "status": new_status}
+
+
+@router.delete("/admin/appointments/{appointment_id}")
+def delete_appointment(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Delete an appointment.
+    """
+    booking = db.query(Booking).filter(Booking.id == appointment_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    db.delete(booking)
+    db.commit()
+
+    return {"message": "Appointment deleted successfully"}
+
+
 # ============== SERVICE ENDPOINTS ==============
 
 @router.get("/services", response_model=List[ServiceOut])

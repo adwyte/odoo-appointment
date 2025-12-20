@@ -120,12 +120,24 @@ export const api = {
     return response.json();
   },
 
-  async deleteUser(id: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+  async getUserAppointmentCount(id: number): Promise<{ appointment_count: number }> {
+    const response = await fetch(`${API_BASE_URL}/api/users/${id}/appointments/count`);
+    if (!response.ok) {
+      return { appointment_count: 0 };
+    }
+    return response.json();
+  },
+
+  async deleteUser(id: number, force: boolean = false): Promise<void> {
+    const url = force 
+      ? `${API_BASE_URL}/api/users/${id}?force=true`
+      : `${API_BASE_URL}/api/users/${id}`;
+    const response = await fetch(url, {
       method: "DELETE",
     });
     if (!response.ok) {
-      throw new Error("Failed to delete user");
+      const error = await response.json().catch(() => ({ detail: "Failed to delete user" }));
+      throw new Error(error.detail || "Failed to delete user");
     }
   },
 
