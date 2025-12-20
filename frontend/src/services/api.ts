@@ -1,5 +1,9 @@
 const API_BASE_URL = "http://localhost:8000";
 
+/* =====================
+   TYPES
+===================== */
+
 export interface User {
   id: number;
   email: string;
@@ -22,16 +26,15 @@ export interface UpdateUserData {
   full_name?: string;
   role?: "customer" | "admin" | "organiser";
   is_active?: boolean;
+  is_verified?: boolean;
 }
 
 export interface UserStats {
   total_users: number;
-  total_providers?: number;
-  total_appointments?: number;
-  total_revenue?: number;
-  active_users?: number;
+  total_admins?: number;
   total_organisers?: number;
   total_customers?: number;
+  active_users?: number;
 }
 
 export interface UsersResponse {
@@ -39,129 +42,114 @@ export interface UsersResponse {
   total: number;
 }
 
-export interface Appointment {
-  id: number;
-  customer_name: string;
-  customer_email: string;
-  service_name: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  created_at: string | null;
+/* =====================
+   HELPERS
+===================== */
+
+function authHeaders(): HeadersInit {
+  const token = localStorage.getItem("access_token");
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
 }
 
-export interface AppointmentsResponse {
-  appointments: Appointment[];
-  total: number;
-  pending_count: number;
-  confirmed_count: number;
-  cancelled_count: number;
-  completed_count: number;
-}
+/* =====================
+   API
+===================== */
 
 export const api = {
-  // Users
-  async getUsers(params?: { limit?: number }): Promise<UsersResponse> {
-    try {
-      const queryParams = params?.limit ? `?limit=${params.limit}` : "";
-      const response = await fetch(`${API_BASE_URL}/api/users${queryParams}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch users");
-      }
-      const users = await response.json();
-      return { users, total: users.length };
-    } catch {
-      // Return empty if API not available
-      return { users: [], total: 0 };
-    }
+  /* ---------- AUTH ---------- */
+
+  async getMe(): Promise<User> {
+    const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error("Not authenticated");
+    return res.json();
   },
 
-  async getUserStats(): Promise<UserStats> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/stats`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch stats");
-      }
-      return response.json();
-    } catch {
-      // Return empty stats if API not available
-      return {
-        total_users: 0,
-        active_users: 0,
-        total_organisers: 0,
-        total_customers: 0
-      };
-    }
-  },
-
-  async createUser(userData: CreateUserData): Promise<User> {
-    const response = await fetch(`${API_BASE_URL}/api/users`, {
+  async login(email: string, password: string): Promise<{ access_token: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
+      body: JSON.stringify({ email, password }),
     });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: "Failed to create user" }));
-      throw new Error(error.detail || "Failed to create user");
-    }
-    return response.json();
+    if (!res.ok) throw new Error("Invalid credentials");
+    return res.json();
   },
 
-  async updateUser(id: number, userData: UpdateUserData): Promise<User> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
+  /* ---------- USERS ---------- */
+
+  async getUsers(params?: { limit?: number }): Promise<UsersResponse> {
+    const query = params?.limit ? `?limit=${params.limit}` : "";
+    const res = await fetch(`${API_BASE_URL}/api/users${query}`, {
+      headers: authHeaders(),
     });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: "Failed to update user" }));
-      throw new Error(error.detail || "Failed to update user");
+    if (!res.ok) throw new Error("Failed to fetch users");
+    const users = await res.json();
+    return { users, total: users.length };
+  },
+
+  async createUser(data: CreateUserData): Promise<User> {
+    const res = await fetch(`${API_BASE_URL}/api/users`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Signup failed" }));
+      throw new Error(err.detail);
     }
-    return response.json();
+    return res.json();
+  },
+
+  async updateUser(id: number, data: UpdateUserData): Promise<User> {
+    const res = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Update failed" }));
+      throw new Error(err.detail);
+    }
+    return res.json();
+  },
+
+  async deleteUser(id: number, force = false): Promise<void> {
+    const url = force
+      ? `${API_BASE_URL}/api/users/${id}?force=true`
+      : `${API_BASE_URL}/api/users/${id}`;
+
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Delete failed" }));
+      throw new Error(err.detail);
+    }
   },
 
   async getUserAppointmentCount(id: number): Promise<{ appointment_count: number }> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}/appointments/count`);
-    if (!response.ok) {
-      return { appointment_count: 0 };
-    }
-    return response.json();
-  },
-
-  async deleteUser(id: number, force: boolean = false): Promise<void> {
-    const url = force 
-      ? `${API_BASE_URL}/api/users/${id}?force=true`
-      : `${API_BASE_URL}/api/users/${id}`;
-    const response = await fetch(url, {
-      method: "DELETE",
+    const res = await fetch(`${API_BASE_URL}/api/users/${id}/appointments/count`, {
+      headers: authHeaders(),
     });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: "Failed to delete user" }));
-      throw new Error(error.detail || "Failed to delete user");
-    }
+    if (!res.ok) return { appointment_count: 0 };
+    return res.json();
   },
 
-  // Appointments
-  async getAppointments(params?: { limit?: number; status?: string }): Promise<AppointmentsResponse> {
-    try {
-      const queryParams = new URLSearchParams();
-      if (params?.limit) queryParams.append("limit", params.limit.toString());
-      if (params?.status) queryParams.append("status", params.status);
-      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
-      const response = await fetch(`${API_BASE_URL}/api/admin/appointments${queryString}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch appointments");
-      }
-      return response.json();
-    } catch {
-      return {
-        appointments: [],
-        total: 0,
-        pending_count: 0,
-        confirmed_count: 0,
-        cancelled_count: 0,
-        completed_count: 0,
-      };
-    }
+  /* ---------- STATS ---------- */
+
+  async getUserStats(): Promise<UserStats> {
+    const res = await fetch(`${API_BASE_URL}/api/stats`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to fetch stats");
+    return res.json();
   },
 };
