@@ -116,31 +116,13 @@ const PaymentPage: React.FC = () => {
     try {
       setPaying(true);
 
-      // 1) init payment in DB
-      const initRes = await axios.post(`${API_BASE}/payments/init`, {
-        booking_id: checkout.booking_id,
-        amount: checkout.total,
-        currency: checkout.currency,
-        provider: "mock",
-      });
-
-      // backend may return id OR paymentId — handle both safely
-      const paymentId =
-        initRes.data?.id ?? initRes.data?.payment_id ?? initRes.data?.paymentId;
-
-      if (!paymentId) {
-        console.error("Init payment response:", initRes.data);
-        throw new Error("Payment init succeeded but payment id missing from response");
-      }
-
-      // 2) mark payment success (should update payments table + booking status)
-      await axios.post(`${API_BASE}/payments/success`, {
-        payment_id: paymentId,
-      });
+      // SIMULATED PAYMENT (Bypassing API as requested)
+      // We are simulating a successful payment delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       setPaymentSuccess(true);
     } catch (err: any) {
-      console.error("Payment failed:", err?.response?.data || err);
+      console.error("Payment failed:", err);
       alert("Payment failed. Please try again.");
     } finally {
       setPaying(false);
