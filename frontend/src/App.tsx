@@ -8,6 +8,7 @@ import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import OrganiserDashboard from "./pages/dashboard/OrganiserDashboard";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
 import PaymentPage from "./pages/dashboard/PaymentPage";
+import ReceiptPage from "./pages/dashboard/ReceiptPage";
 import UsersPage from "./pages/dashboard/UsersPage";
 import AppointmentsPage from "./pages/dashboard/AppointmentsPage";
 import ReportsPage from "./pages/dashboard/ReportsPage";
@@ -99,6 +100,7 @@ export default function App() {
           <Route path="book-now" element={<AppointmentBooking />} />
           <Route path="my-bookings" element={<MyBookings />} />
           <Route path="payment" element={<PaymentPage />} />
+          <Route path="payment/receipt/:paymentId" element={<ReceiptPage />} />
           <Route path="profile" element={<PlaceholderPage title="My Profile" />} />
         </Route>
 

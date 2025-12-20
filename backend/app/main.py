@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from fastapi.security import OAuth2PasswordBearer
 from app.core.deps import get_current_user
 from app.models.models import User, UserRole, Booking
-from app.api import appointments, auth
+from app.api import appointments, auth, payments
 from app.database import get_db
 
 load_dotenv()
@@ -40,6 +40,7 @@ app.add_middleware(
 
 app.include_router(appointments.router, prefix="/api")
 app.include_router(auth.router)
+app.include_router(payments.router, prefix="/api")
 
 
 # =====================

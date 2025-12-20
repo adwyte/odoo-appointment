@@ -8,7 +8,6 @@ import {
   Clock,
   UserCog,
   LogOut,
-  List,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -21,15 +20,12 @@ const adminLinks = [
   { to: "/admin/users", icon: Users, label: "Users" },
   { to: "/admin/appointments", icon: Calendar, label: "Appointments" },
   { to: "/admin/reports", icon: BarChart3, label: "Reports" },
-  { to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
 const organiserLinks = [
   { to: "/organiser", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/organiser/bookings", icon: List, label: "Bookings" },
   { to: "/organiser/availability", icon: Clock, label: "Availability" },
   { to: "/organiser/calendar", icon: Calendar, label: "Calendar" },
-  { to: "/organiser/reports", icon: BarChart3, label: "Reports" },
   { to: "/organiser/settings", icon: Settings, label: "Settings" },
 ];
 

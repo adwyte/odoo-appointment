@@ -170,3 +170,64 @@ def mark_payment_success(payload: PaymentSuccessIn, db: Session = Depends(get_db
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Payment success failed: {e}")
+
+
+@router.get("/receipt")
+def get_payment_receipt(
+    payment_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns receipt details for a succeeded payment.
+    """
+    row = db.execute(
+        text("""
+            SELECT
+                p.id AS payment_id,
+                p.amount,
+                p.currency,
+                p.provider,
+                p.status,
+                p.created_at AS paid_at,
+                b.id AS booking_id,
+                b.start_time,
+                b.end_time,
+                u.full_name AS customer_name,
+                u.email AS customer_email,
+                at.name AS service_name,
+                at.duration_minutes
+            FROM payments p
+            JOIN bookings b ON b.id = p.booking_id
+            JOIN users u ON u.id = b.customer_id
+            JOIN appointment_types at ON at.id = b.appointment_type_id
+            WHERE p.id = :pid
+        """),
+        {"pid": payment_id},
+    ).mappings().first()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    # Simple logic to reverse-calc base price & tax if we only stored total amount
+    # logic: total = base + 10% tax => total = 1.1 * base => base = total / 1.1
+    total = row["amount"]
+    base_price = int(total / 1.1)
+    tax = total - base_price
+
+    return {
+        "receipt_no": f"RCT-{row['payment_id']:06d}",
+        "payment_id": row["payment_id"],
+        "booking_id": row["booking_id"],
+        "status": row["status"],
+        "provider": row["provider"],
+        "currency": row["currency"],
+        "customer_name": row["customer_name"],
+        "customer_email": row["customer_email"],
+        "service_name": row["service_name"],
+        "base_price": base_price,
+        "tax": tax,
+        "total": total,
+        "paid_at": row["paid_at"],
+        "start_time": row["start_time"],
+        "end_time": row["end_time"],
+    }

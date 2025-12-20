@@ -19,7 +19,7 @@ type Method = "credit" | "debit" | "upi" | "paypal";
 
 type PaymentState = {
   bookingId?: number | null;
-  selectedDate?: string; 
+  selectedDate?: string;
   startTime?: string;
 };
 
@@ -31,7 +31,7 @@ type CheckoutData = {
   price: number;
   tax: number;
   total: number;
-  currency: string; 
+  currency: string;
 };
 
 const API_BASE = "http://localhost:8000/api";
@@ -135,7 +135,7 @@ const PaymentPage: React.FC = () => {
       });
 
       alert("Payment successful ");
-      navigate("/dashboard/my-bookings");
+      navigate(`/dashboard/payment/receipt/${paymentId}`);
     } catch (err: any) {
       console.error("Payment failed:", err?.response?.data || err);
       alert("Payment failed. Please try again.");
@@ -275,10 +275,9 @@ const PaymentPage: React.FC = () => {
                       type="button"
                       onClick={() => setMethod(key)}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all
-                        ${
-                          method === key
-                            ? "border-black bg-black text-white shadow-lg"
-                            : "border-gray-200 bg-white hover:border-black"
+                        ${method === key
+                          ? "border-black bg-black text-white shadow-lg"
+                          : "border-gray-200 bg-white hover:border-black"
                         }`}
                     >
                       <div className="flex items-center gap-3">
@@ -286,9 +285,8 @@ const PaymentPage: React.FC = () => {
                         <span className="font-semibold">{label}</span>
                       </div>
                       <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          method === key ? "border-white" : "border-gray-300"
-                        }`}
+                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${method === key ? "border-white" : "border-gray-300"
+                          }`}
                       >
                         {method === key && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
@@ -425,10 +423,9 @@ const PaymentPage: React.FC = () => {
                       onClick={handlePayNow}
                       disabled={!canPay || paying}
                       className={`mt-4 w-full py-3 rounded-xl font-bold transition-all
-                        ${
-                          !canPay || paying
-                            ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                            : "bg-black text-white hover:bg-gray-800"
+                        ${!canPay || paying
+                          ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                          : "bg-black text-white hover:bg-gray-800"
                         }`}
                     >
                       {paying ? "Processing..." : "Pay Now"}
