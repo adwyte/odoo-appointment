@@ -152,7 +152,7 @@ def get_bookings(
             start_time=booking.start_time,
             end_time=booking.end_time,
             status=booking.status.value,
-            created_at=booking.created_at
+            created_at=None  # Booking model doesn't have created_at
         ))
     
     return result
