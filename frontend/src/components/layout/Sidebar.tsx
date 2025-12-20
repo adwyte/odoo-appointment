@@ -6,7 +6,6 @@ import {
   BarChart3,
   LogOut,
   ClipboardList,
-  Clock,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -24,7 +23,6 @@ const adminLinks = [
 const organiserLinks = [
   { to: "/organiser", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/organiser/bookings", icon: ClipboardList, label: "Bookings" },
-  { to: "/organiser/availability", icon: Clock, label: "Availability" },
   { to: "/organiser/calendar", icon: Calendar, label: "Calendar" },
   { to: "/organiser/reports", icon: BarChart3, label: "Reports" },
 ];

@@ -17,7 +17,6 @@ import AppointmentBooking from "./components/AppointmentBooking";
 import MyBookings from "./components/MyBookings";
 import CreateService from "./pages/organiser/CreateService";
 import OrganiserCalendar from "./pages/organiser/OrganiserCalendar";
-import AvailabilitySettings from "./pages/organiser/AvailabilitySettings";
 import OrganiserReports from "./pages/organiser/OrganiserReports";
 import OrganiserBookings from "./pages/organiser/OrganiserBookings";
 
@@ -87,7 +86,6 @@ export default function App() {
           <Route path="services" element={<PlaceholderPage title="Service Management" />} />
           <Route path="services/create" element={<CreateService />} />
           <Route path="bookings" element={<OrganiserBookings />} />
-          <Route path="availability" element={<AvailabilitySettings />} />
           <Route path="calendar" element={<OrganiserCalendar />} />
           <Route path="reports" element={<OrganiserReports />} />
         </Route>

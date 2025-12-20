@@ -4,7 +4,6 @@ import {
     RefreshCw,
     PieChart,
     BarChart3,
-    Activity,
     CheckCircle,
     Clock,
     Users,
@@ -196,75 +195,6 @@ const BarChartComponent = ({
     );
 };
 
-// Line Chart Component
-const LineChartComponent = ({
-    data,
-    height = 200,
-    width = 400,
-    color = "#3b82f6",
-}: {
-    data: { label: string; value: number }[];
-    height?: number;
-    width?: number;
-    color?: string;
-}) => {
-    if (data.length === 0) {
-        return (
-            <div style={{ textAlign: "center", padding: "40px" }}>
-                <p style={{ color: "#6b7280" }}>No data available</p>
-            </div>
-        );
-    }
-
-    const padding = 40;
-    const chartWidth = width - padding * 2;
-    const chartHeight = height - padding * 2;
-    const maxValue = Math.max(...data.map((d) => d.value), 1);
-
-    const points = data.map((item, i) => ({
-        x: padding + (i / (data.length - 1 || 1)) * chartWidth,
-        y: padding + chartHeight - (item.value / maxValue) * chartHeight,
-        ...item,
-    }));
-
-    const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-    const areaPath = `${linePath} L ${points[points.length - 1]?.x || padding} ${padding + chartHeight
-        } L ${padding} ${padding + chartHeight} Z`;
-
-    return (
-        <svg width={width} height={height}>
-            {/* Grid lines */}
-            {[0, 25, 50, 75, 100].map((percent, i) => {
-                const y = padding + chartHeight - (chartHeight * percent) / 100;
-                return (
-                    <g key={i}>
-                        <line x1={padding} y1={y} x2={width - padding} y2={y} stroke="#e5e7eb" strokeDasharray="4" />
-                        <text x="5" y={y + 4} fontSize="10" fill="#9ca3af">
-                            {Math.round((maxValue * percent) / 100)}
-                        </text>
-                    </g>
-                );
-            })}
-
-            {/* Area fill */}
-            <path d={areaPath} fill={`${color}20`} />
-
-            {/* Line */}
-            <path d={linePath} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />
-
-            {/* Points */}
-            {points.map((p, i) => (
-                <g key={i}>
-                    <circle cx={p.x} cy={p.y} r="6" fill="#fff" stroke={color} strokeWidth="3" />
-                    <text x={p.x} y={height - 10} textAnchor="middle" fontSize="10" fill="#6b7280">
-                        {p.label}
-                    </text>
-                </g>
-            ))}
-        </svg>
-    );
-};
-
 // Horizontal Bar Chart Component
 const HorizontalBarChart = ({
     data,
@@ -439,19 +369,6 @@ export default function OrganiserReports() {
             color: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"][i % 6],
         }));
 
-    // Calculate weekly data from appointment stats (distribute based on total)
-    const totalAppointments = appointmentStats?.total || 0;
-    const avgPerDay = totalAppointments > 0 ? Math.ceil(totalAppointments / 7) : 0;
-    const weeklyAppointments = [
-        { label: "Mon", value: Math.min(avgPerDay + Math.floor(avgPerDay * 0.2), totalAppointments) },
-        { label: "Tue", value: Math.min(avgPerDay + Math.floor(avgPerDay * 0.1), totalAppointments) },
-        { label: "Wed", value: Math.min(avgPerDay + Math.floor(avgPerDay * 0.3), totalAppointments) },
-        { label: "Thu", value: Math.min(avgPerDay + Math.floor(avgPerDay * 0.15), totalAppointments) },
-        { label: "Fri", value: Math.min(avgPerDay, totalAppointments) },
-        { label: "Sat", value: Math.floor(avgPerDay * 0.5) },
-        { label: "Sun", value: Math.floor(avgPerDay * 0.3) },
-    ];
-
     return (
         <div className="dashboard-page">
             <div className="page-header">
@@ -538,27 +455,15 @@ export default function OrganiserReports() {
                         </div>
                     </div>
 
-                    {/* Charts Row 2 */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "24px" }}>
-                        <div className="dashboard-card">
-                            <div className="card-header" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                <Activity className="w-5 h-5" style={{ color: "#8b5cf6" }} />
-                                <h3>Weekly Trend</h3>
-                            </div>
-                            <div className="card-body" style={{ padding: "24px" }}>
-                                <LineChartComponent data={weeklyAppointments} height={200} width={400} color="#8b5cf6" />
-                            </div>
+                    {/* Performance Metrics */}
+                    <div className="dashboard-card" style={{ marginBottom: "24px" }}>
+                        <div className="card-header">
+                            <h3>Performance Metrics</h3>
                         </div>
-
-                        <div className="dashboard-card">
-                            <div className="card-header">
-                                <h3>Performance Metrics</h3>
-                            </div>
-                            <div className="card-body" style={{ padding: "24px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
-                                <GaugeChart value={completionRate} title="Completion" color="#10b981" />
-                                <GaugeChart value={confirmationRate} title="Confirmation" color="#3b82f6" />
-                                <GaugeChart value={cancellationRate} title="Cancellation" color="#ef4444" />
-                            </div>
+                        <div className="card-body" style={{ padding: "24px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+                            <GaugeChart value={completionRate} title="Completion" color="#10b981" />
+                            <GaugeChart value={confirmationRate} title="Confirmation" color="#3b82f6" />
+                            <GaugeChart value={cancellationRate} title="Cancellation" color="#ef4444" />
                         </div>
                     </div>
 

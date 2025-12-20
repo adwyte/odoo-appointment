@@ -243,9 +243,9 @@ export default function OrganiserDashboard() {
             <Calendar className="w-6 h-6" />
             <span>View Calendar</span>
           </button>
-          <button className="action-card" onClick={() => navigate("/organiser/availability")}>
+          <button className="action-card" onClick={() => navigate("/organiser/bookings")}>
             <Clock className="w-6 h-6" />
-            <span>Set Availability</span>
+            <span>Manage Bookings</span>
           </button>
           <button className="action-card">
             <Users className="w-6 h-6" />

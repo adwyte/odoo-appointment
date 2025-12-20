@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from app.api import payments
 from app.database import get_db
 from app.models.models import User, UserRole, Booking, Resource
-from app.api import appointments, auth, payments, schedules
+from app.api import appointments, auth, payments
 from app.core.security import create_access_token
 from app.core.deps import get_current_user
 from passlib.context import CryptContext
@@ -44,7 +44,6 @@ app.add_middleware(
 app.include_router(appointments.router, prefix="/api")
 app.include_router(auth.router)
 app.include_router(payments.router, prefix="/api")
-app.include_router(schedules.router, prefix="/api")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
