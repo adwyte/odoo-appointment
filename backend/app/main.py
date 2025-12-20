@@ -13,9 +13,12 @@ from jose import jwt
 from app.models.models import Base, User, UserRole, Booking, BookingStatus, AppointmentType
 from app.api import appointments, auth
 
+<<<<<<< HEAD
 from dotenv import load_dotenv
 load_dotenv()
 
+=======
+>>>>>>> origin/fixed_appointments
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql+psycopg2://postgres:Sansku%23062005@localhost:5432/odoo_appointment"
@@ -45,7 +48,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+<<<<<<< HEAD
 # Register routers
+=======
+>>>>>>> origin/fixed_appointments
 app.include_router(appointments.router, prefix="/api")
 app.include_router(auth.router)
 
