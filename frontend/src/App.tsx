@@ -8,6 +8,7 @@ import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import OrganiserDashboard from "./pages/dashboard/OrganiserDashboard";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
 import PaymentPage from "./pages/dashboard/PaymentPage";
+import ReceiptPage from "./pages/RecieptPage";
 
 import AppointmentBooking from "./components/AppointmentBooking";
 import MyBookings from "./components/MyBookings";
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="my-bookings" element={<MyBookings />} />
           <Route path="payment" element={<PaymentPage />} />
           <Route path="profile" element={<PlaceholderPage title="My Profile" />} />
+          <Route path="receipt/:paymentId" element={<ReceiptPage />} />
         </Route>
 
         {/* Catch all - redirect to landing */}

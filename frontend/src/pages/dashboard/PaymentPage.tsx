@@ -107,6 +107,7 @@ const PaymentPage: React.FC = () => {
     if (!checkout?.booking_id) {
       alert("Missing checkout details. Please reload.");
       return;
+    
     }
 
     try {
@@ -134,8 +135,10 @@ const PaymentPage: React.FC = () => {
         payment_id: paymentId,
       });
 
+    
+
       alert("Payment successful ");
-      navigate("/dashboard/my-bookings");
+      navigate(`/dashboard/receipt/${paymentId}`);
     } catch (err: any) {
       console.error("Payment failed:", err?.response?.data || err);
       alert("Payment failed. Please try again.");
