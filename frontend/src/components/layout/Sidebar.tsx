@@ -6,7 +6,6 @@ import {
   Settings,
   BarChart3,
   Clock,
-  UserCog,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";

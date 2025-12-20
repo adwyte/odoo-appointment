@@ -102,7 +102,10 @@ export default function Login() {
         </button>
 
         <div className="text-sm text-gray-500 flex justify-between">
-          <span className="cursor-pointer hover:text-black">
+          <span
+            className="cursor-pointer hover:text-black"
+            onClick={() => navigate("/forgot-password")}
+          >
             Forgot password?
           </span>
           <span

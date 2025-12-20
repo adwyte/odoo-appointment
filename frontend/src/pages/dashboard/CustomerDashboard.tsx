@@ -1,39 +1,65 @@
-import { useState, useEffect } from "react";
-import { Calendar, Clock, Search, Filter, RefreshCw } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Calendar, Clock, Search, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Badge from "../../components/ui/Badge";
 
-// Helper to get emoji icon based on service name
-const getServiceIcon = (name: string): string => {
-  const lowerName = name.toLowerCase();
-  if (lowerName.includes("hair")) return "💇";
-  if (lowerName.includes("consult") || lowerName.includes("medical")) return "🏥";
-  if (lowerName.includes("massage")) return "💆";
-  if (lowerName.includes("dental")) return "🦷";
-  if (lowerName.includes("fitness") || lowerName.includes("gym")) return "🏋️";
-  if (lowerName.includes("photo")) return "📸";
-  if (lowerName.includes("travel") || lowerName.includes("cab")) return "🚗";
-  if (lowerName.includes("clean")) return "🧹";
-  return "📅";
-};
-
-// Helper to format duration
-const formatDuration = (minutes: number): string => {
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours} hour${hours > 1 ? "s" : ""}`;
-};
-
-interface Service {
-  id: number;
-  name: string;
-  description: string | null;
-  duration_minutes: number;
-  is_published: boolean;
-  booking_count: number;
-}
+const services = [
+  {
+    id: 1,
+    name: "Hair Styling",
+    provider: "Style Studio",
+    duration: "1 hour",
+    price: "450/-",
+    image: "💇",
+    available: true,
+  },
+  {
+    id: 2,
+    name: "Medical Consultation",
+    provider: "Dr. Sarah Wilson",
+    duration: "30 min",
+    price: "800/-",
+    image: "🏥",
+    available: true,
+  },
+  {
+    id: 3,
+    name: "Massage Therapy",
+    provider: "Wellness Center",
+    duration: "1.5 hours",
+    price: "950/-",
+    image: "💆",
+    available: true,
+  },
+  {
+    id: 4,
+    name: "Dental Checkup",
+    provider: "Dr. Mike Chen",
+    duration: "45 min",
+    price: "1200/-",
+    image: "🦷",
+    available: true,
+  },
+  {
+    id: 5,
+    name: "Fitness Training",
+    provider: "FitLife Gym",
+    duration: "1 hour",
+    price: "350/-",
+    image: "🏋️",
+    available: true,
+  },
+  {
+    id: 6,
+    name: "Photography Session",
+    provider: "Capture Studios",
+    duration: "2 hours",
+    price: "1500/-",
+    image: "📸",
+    available: true,
+  },
+];
 
 interface Booking {
   id: number;
@@ -43,37 +69,49 @@ interface Booking {
   status: string;
 }
 
+// ---- Category logic ----
+type Category =
+  | "All"
+  | "Medical"
+  | "Massage"
+  | "Fitness"
+  | "Hair"
+  | "Dental"
+  | "Photography"
+  | "Other";
+
+const CATEGORIES: Category[] = [
+  "All",
+  "Medical",
+  "Massage",
+  "Fitness",
+  "Hair",
+  "Dental",
+  "Photography",
+  "Other",
+];
+
+const detectCategory = (serviceName: string): Category => {
+  const s = serviceName.toLowerCase();
+
+  if (s.includes("medical") || s.includes("consult")) return "Medical";
+  if (s.includes("massage")) return "Massage";
+  if (s.includes("fitness") || s.includes("gym") || s.includes("training")) return "Fitness";
+  if (s.includes("hair") || s.includes("styling")) return "Hair";
+  if (s.includes("dental") || s.includes("tooth")) return "Dental";
+  if (s.includes("photo") || s.includes("photography")) return "Photography";
+
+  return "Other";
+};
+
 export default function CustomerDashboard() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [services, setServices] = useState<Service[]>([]);
-  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
-  const [loadingServices, setLoadingServices] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<Category>("All");
+
   const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
   const [userEmail, setUserEmail] = useState("");
   const [showEmailPrompt, setShowEmailPrompt] = useState(true);
-
-  // Fetch services from API
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
-    setLoadingServices(true);
-    try {
-      const response = await axios.get<Service[]>(
-        "http://localhost:8000/api/services?published_only=true"
-      );
-      setServices(response.data);
-      setFilteredServices(response.data);
-    } catch (error) {
-      console.error("Error fetching services:", error);
-      setServices([]);
-      setFilteredServices([]);
-    } finally {
-      setLoadingServices(false);
-    }
-  };
 
   // Load email from localStorage
   useEffect(() => {
@@ -88,12 +126,11 @@ export default function CustomerDashboard() {
   const fetchUpcomingBookings = async (email: string) => {
     try {
       const response = await axios.get<Booking[]>(`http://localhost:8000/api/bookings`, {
-        params: { customer_email: email }
+        params: { customer_email: email },
       });
-      // Filter for future bookings only
       const now = new Date();
-      const upcoming = response.data.filter(b => new Date(b.start_time) > now);
-      setUpcomingBookings(upcoming.slice(0, 3)); // Show max 3
+      const upcoming = response.data.filter((b) => new Date(b.start_time) > now);
+      setUpcomingBookings(upcoming.slice(0, 3));
     } catch (error) {
       console.error("Error fetching bookings:", error);
     }
@@ -108,35 +145,59 @@ export default function CustomerDashboard() {
     }
   };
 
-  const handleSearch = () => {
-    if (!searchQuery.trim()) {
-      setFilteredServices(services);
-      return;
+  // ✅ ONE source of truth: filtered list derived from services + search + category
+  const filteredServices = useMemo(() => {
+    let list = services;
+
+    // category filter
+    if (selectedCategory !== "All") {
+      list = list.filter((svc) => detectCategory(svc.name) === selectedCategory);
     }
-    const query = searchQuery.toLowerCase();
-    const filtered = services.filter(
-      s => s.name.toLowerCase().includes(query) ||
-        (s.description && s.description.toLowerCase().includes(query))
-    );
-    setFilteredServices(filtered);
-  };
+
+    // search filter
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (svc) =>
+          svc.name.toLowerCase().includes(q) ||
+          svc.provider.toLowerCase().includes(q)
+      );
+    }
+
+    return list;
+  }, [searchQuery, selectedCategory]);
 
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
+    if (e.key === "Enter") {
+      // no-op: filtering happens automatically via useMemo
+      // keeping Enter behavior so it feels responsive
     }
   };
 
-  const handleBookNow = (service: Service) => {
-    navigate(`/dashboard/book-now?serviceId=${service.id}&serviceName=${encodeURIComponent(service.name)}`);
+  const handleBookNow = (service: (typeof services)[0]) => {
+    navigate(
+      `/dashboard/book-now?serviceId=${service.id}&serviceName=${encodeURIComponent(service.name)}`
+    );
   };
 
   const formatDateTime = (dateStr: string) => {
     const date = new Date(dateStr);
     return {
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      date: date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      time: date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     };
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("All");
   };
 
   return (
@@ -145,6 +206,7 @@ export default function CustomerDashboard() {
       <div className="customer-hero">
         <h2>Book Your Next Appointment</h2>
         <p>Find and book services from trusted providers</p>
+
         <div className="hero-search">
           <Search className="w-5 h-5" />
           <input
@@ -154,26 +216,32 @@ export default function CustomerDashboard() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleSearchKeyPress}
           />
-          <button className="btn btn-primary" onClick={handleSearch}>Search</button>
+          <button className="btn btn-primary" onClick={() => { /* filtering auto */ }}>
+            Search
+          </button>
         </div>
       </div>
 
       {/* Email Prompt for Upcoming Appointments */}
       {showEmailPrompt && (
         <div className="upcoming-section">
-          <div className="upcoming-card" style={{ padding: '20px' }}>
+          <div className="upcoming-card" style={{ padding: "20px" }}>
             <form onSubmit={handleEmailSubmit} className="flex gap-4 items-center">
-              <span className="text-sm text-gray-600">Enter your email to see upcoming appointments:</span>
+              <span className="text-sm text-gray-600">
+                Enter your email to see upcoming appointments:
+              </span>
               <input
                 type="email"
                 value={userEmail}
                 onChange={(e) => setUserEmail(e.target.value)}
                 placeholder="your@email.com"
                 className="input"
-                style={{ maxWidth: '250px', marginBottom: 0 }}
+                style={{ maxWidth: "250px", marginBottom: 0 }}
                 required
               />
-              <button type="submit" className="btn btn-outline">Load</button>
+              <button type="submit" className="btn btn-outline">
+                Load
+              </button>
             </form>
           </div>
         </div>
@@ -197,9 +265,7 @@ export default function CustomerDashboard() {
                       <span>{time}</span>
                     </div>
                   </div>
-                  <Badge
-                    variant={booking.status === "confirmed" ? "success" : "warning"}
-                  >
+                  <Badge variant={booking.status === "confirmed" ? "success" : "warning"}>
                     {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                   </Badge>
                 </div>
@@ -213,61 +279,76 @@ export default function CustomerDashboard() {
       <div className="services-section">
         <div className="section-header">
           <h3>
-            Available Services
-            {searchQuery && ` (${filteredServices.length} results)`}
+            Available Services{" "}
+            {(searchQuery.trim() || selectedCategory !== "All") && `(${filteredServices.length} results)`}
           </h3>
-          <div className="flex gap-2">
-            <button
-              className="btn btn-outline"
-              onClick={() => { setSearchQuery(""); setFilteredServices(services); }}
-            >
-              <Filter className="w-4 h-4" />
-              {searchQuery ? "Clear" : "Filter"}
-            </button>
-            <button className="btn btn-outline" onClick={fetchServices} title="Refresh services">
-              <RefreshCw className={`w-4 h-4 ${loadingServices ? "animate-spin" : ""}`} />
-            </button>
-          </div>
+
+          <button className="btn btn-outline" onClick={clearFilters}>
+            <Filter className="w-4 h-4" />
+            Clear
+          </button>
         </div>
+
+        {/* ✅ Category chips */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {CATEGORIES.map((cat) => {
+            const active = cat === selectedCategory;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1 rounded-full border text-sm font-medium transition
+                  ${active ? "bg-black text-white border-black" : "bg-white text-gray-700 border-gray-300 hover:border-black"}`}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="services-grid">
-          {loadingServices ? (
-            <div className="p-8 text-center col-span-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto"></div>
-              <p className="mt-4 text-gray-500">Loading services...</p>
-            </div>
-          ) : filteredServices.length === 0 ? (
+          {filteredServices.length === 0 ? (
             <div className="p-8 text-center col-span-3">
               <p className="text-gray-500">
-                {searchQuery
-                  ? `No services found matching "${searchQuery}"`
-                  : "No services available yet. Check back soon!"}
+                No services found for your filters.
               </p>
+              <button className="btn btn-outline mt-4" onClick={clearFilters}>
+                Reset Filters
+              </button>
             </div>
           ) : (
             filteredServices.map((service) => (
-              <div key={service.id} className="service-card">
-                <div className="service-card-image">{getServiceIcon(service.name)}</div>
+              <div
+                key={service.id}
+                className={`service-card ${!service.available ? "unavailable" : ""}`}
+              >
+                <div className="service-card-image">{service.image}</div>
+
                 <div className="service-card-content">
                   <h4>{service.name}</h4>
-                  <p className="provider-name">
-                    {service.description || "Professional service"}
-                  </p>
+                  <p className="provider-name">{service.provider}</p>
+
                   <div className="service-card-meta">
                     <span className="duration">
                       <Clock className="w-4 h-4" />
-                      {formatDuration(service.duration_minutes)}
+                      {service.duration}
                     </span>
-                    <span className="rating">⭐ 4.8</span>
-                    <span className="reviews">({service.booking_count})</span>
                   </div>
+
                   <div className="service-card-footer">
-                    <span className="price">Book Now</span>
+                    <span className="price">{service.price}</span>
                     <button
                       className="btn btn-primary"
+                      disabled={!service.available}
                       onClick={() => handleBookNow(service)}
                     >
-                      Book Now
+                      {service.available ? "Book Now" : "Unavailable"}
                     </button>
+                  </div>
+
+                  {/* Optional: show category label */}
+                  <div className="mt-2 text-xs text-gray-500">
+                    Category: <span className="font-semibold">{detectCategory(service.name)}</span>
                   </div>
                 </div>
               </div>
