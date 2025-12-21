@@ -1,6 +1,4 @@
----
-
-# 🚀 OdooxSPIT Appointment Booking Software - UrbanCare
+# OdooxSPIT Appointment Booking Software - UrbanCare
 
 Demo Video: https://drive.google.com/file/d/1O_7hxYCyiBaYaCdbXjJxA6bOjgdCoXnf/view?usp=sharing
 
@@ -55,21 +53,12 @@ Behind the scenes:
 
 ## 🧩 Core Capabilities
 
-* 📅 Service-based appointment booking
-* ⏱️ Slot-wise availability management
-* 🔐 Authenticated user bookings
-* 🧠 Backend-driven validation & integrity
-* 💻 Modern, responsive UI
-* 🔄 Built for extension & integration
-
----
-
-## 🎯 Designed For
-
-* Clinics & healthcare providers
-* Corporate scheduling workflows
-* Educational & mentoring platforms
-* ERP-backed service businesses
+* Service-based appointment booking
+* Slot-wise availability management
+* Authenticated user bookings
+* Backend-driven validation & integrity
+* Modern, responsive UI
+* Built for extension & integration
 
 ---
 
@@ -81,16 +70,6 @@ Behind the scenes:
 * **Extensible, not monolithic**
 
 This isn’t just a booking app — it’s a **scheduling layer** you can build on.
-
----
-
-## 🔮 What’s Next
-
-* Admin dashboards
-* Notifications & reminders
-* Payment integrations
-* Calendar sync
-* Analytics & utilization insights
 
 ---
 
