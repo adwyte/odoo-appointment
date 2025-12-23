@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../config';
 import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, CalendarPlus } from 'lucide-react';
 import { generateBookingCalendarUrl } from '../utils/calendarUtils';
 import { useAuth } from '../hooks/useAuth.tsx';
@@ -29,7 +30,7 @@ const MyBookings: React.FC = () => {
     const fetchBookings = async (email: string) => {
         setLoading(true);
         try {
-            const response = await axios.get<Booking[]>(`http://localhost:8000/api/bookings`, {
+            const response = await axios.get<Booking[]>(`${API_BASE}/bookings`, {
                 params: { customer_email: email }
             });
             setBookings(response.data);

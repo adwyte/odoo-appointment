@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Calendar, Clock, Search, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../../config";
 import Badge from "../../components/ui/Badge";
 
 interface Booking {
@@ -95,7 +96,7 @@ export default function CustomerDashboard() {
   const fetchServices = async () => {
     setLoadingServices(true);
     try {
-      const response = await axios.get<Service[]>("http://localhost:8000/api/services?published_only=true");
+      const response = await axios.get<Service[]>(`${API_BASE}/services?published_only=true`);
       setServices(response.data);
     } catch (error) {
       console.error("Error fetching services:", error);
@@ -106,7 +107,7 @@ export default function CustomerDashboard() {
 
   const fetchUpcomingBookings = async (email: string) => {
     try {
-      const response = await axios.get<Booking[]>(`http://localhost:8000/api/bookings`, {
+      const response = await axios.get<Booking[]>(`${API_BASE}/bookings`, {
         params: { customer_email: email },
       });
       const now = new Date();

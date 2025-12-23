@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useVantaWaves } from "../hooks/useVantaWaves";
+import { API_BASE, API_BASE_URL } from "../config";
 
 export default function Signup() {
   const vantaRef = useVantaWaves();
@@ -24,7 +25,7 @@ export default function Signup() {
       return;
     }
 
-    const res = await fetch("http://localhost:8000/api/users", {
+    const res = await fetch(`${API_BASE}/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -36,7 +37,7 @@ export default function Signup() {
     }
 
     // Auto-login
-    const loginRes = await fetch("http://localhost:8000/api/auth/login", {
+    const loginRes = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -54,7 +55,7 @@ export default function Signup() {
 
 
   const handleGoogleSignup = () => {
-    window.location.href = "http://localhost:8000/auth/google/login";
+    window.location.href = `${API_BASE_URL}/auth/google/login`;
   };
 
   return (

@@ -1,11 +1,11 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Union
 
 class ServiceCreate(BaseModel):
     name: str
     description: Optional[str] = None
     duration_minutes: int = 30
-    price: Optional[str] = None
+    price: Optional[Union[float, str]] = None
     is_published: bool = False
 
 class ServiceOut(BaseModel):
@@ -13,7 +13,7 @@ class ServiceOut(BaseModel):
     name: str
     description: Optional[str] = None
     duration_minutes: int
-    price: Optional[str] = None
+    price: Optional[Union[float, str]] = None
     is_published: bool
     owner_id: Optional[int] = None
     provider_name: Optional[str] = "UrbanCare"
@@ -26,5 +26,5 @@ class ServiceUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     duration_minutes: Optional[int] = None
-    price: Optional[str] = None
+    price: Optional[Union[float, str]] = None
     is_published: Optional[bool] = None

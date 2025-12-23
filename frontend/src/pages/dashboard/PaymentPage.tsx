@@ -17,6 +17,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { generateBookingCalendarUrl } from "../../utils/calendarUtils";
+import { API_BASE } from "../../config";
 
 type Method = "credit" | "debit" | "upi" | "paypal";
 
@@ -36,8 +37,6 @@ type CheckoutData = {
   total: number;
   currency: string;
 };
-
-const API_BASE = "http://localhost:8000/api";
 
 const PaymentPage: React.FC = () => {
   const { state } = useLocation();

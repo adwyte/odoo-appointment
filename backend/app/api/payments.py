@@ -45,10 +45,7 @@ def get_checkout_details(
                 u.full_name AS customer_name,
                 u.email AS customer_email,
                 at.name AS service_name,
-                COALESCE(
-                    NULLIF(regexp_replace(at.price, '[^0-9]', '', 'g'), '')::int,
-                    1000
-                ) AS price,
+                COALESCE(at.price::int, 500) AS price,
                 'INR' AS currency
             FROM bookings b
             JOIN users u ON u.id = b.customer_id
@@ -156,11 +153,11 @@ def mark_payment_success(payload: PaymentSuccessIn, db: Session = Depends(get_db
             {"pid": payload.payment_id},
         )
 
-        # update booking payment_status (TEXT column)
+        # update booking payment_status (enum column)
         db.execute(
             text("""
                 UPDATE bookings
-                SET payment_status = 'paid'
+                SET payment_status = 'PAID'::paymentstatus
                 WHERE id = :bid
             """),
             {"bid": p["booking_id"]},

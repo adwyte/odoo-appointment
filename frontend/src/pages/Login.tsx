@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useVantaWaves } from "../hooks/useVantaWaves";
 import { api } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import { API_BASE_URL } from "../config";
 
 export default function Login() {
   const vantaRef = useVantaWaves();
@@ -52,7 +53,7 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8000/auth/google/login";
+    window.location.href = `${API_BASE_URL}/auth/google/login`;
   };
 
   return (

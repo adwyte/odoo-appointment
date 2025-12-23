@@ -14,8 +14,7 @@ import {
 } from "lucide-react";
 import DataTable from "../../components/ui/DataTable";
 import Badge from "../../components/ui/Badge";
-
-const API_BASE_URL = "http://localhost:8000";
+import { API_BASE_URL } from "../../config";
 
 interface Appointment {
   id: number;
@@ -70,7 +69,7 @@ export default function AppointmentsPage() {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/appointments?${params}`);
       if (!response.ok) throw new Error("Failed to fetch appointments");
-      
+
       const data = await response.json();
       setAppointments(data.appointments);
       setStats({
@@ -482,9 +481,8 @@ export default function AppointmentsPage() {
                 {["pending", "confirmed", "completed", "cancelled"].map((status) => (
                   <button
                     key={status}
-                    className={`status-option ${
-                      selectedAppointment.status === status ? "current" : ""
-                    }`}
+                    className={`status-option ${selectedAppointment.status === status ? "current" : ""
+                      }`}
                     onClick={() => handleStatusChange(status)}
                     disabled={submitting || selectedAppointment.status === status}
                   >

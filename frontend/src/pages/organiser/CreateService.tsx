@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
 import axios from "axios";
+import { API_BASE } from "../../config";
 
 export default function CreateService() {
     const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function CreateService() {
         setError(null);
 
         try {
-            await axios.post("http://localhost:8000/api/services", {
+            await axios.post(`${API_BASE}/services`, {
                 name: formData.name,
                 description: formData.description || null,
                 duration_minutes: parseInt(formData.duration_minutes.toString()),

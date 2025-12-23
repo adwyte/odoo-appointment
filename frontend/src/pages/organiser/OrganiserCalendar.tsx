@@ -8,6 +8,7 @@ import {
     User,
     RefreshCw,
 } from "lucide-react";
+import { API_BASE } from "../../config";
 
 interface Appointment {
     id: number;
@@ -18,8 +19,6 @@ interface Appointment {
     end_time: string;
     status: string;
 }
-
-const API_BASE = "http://localhost:8000/api";
 
 export default function OrganiserCalendar() {
     const [selectedDate, setSelectedDate] = useState<string>(

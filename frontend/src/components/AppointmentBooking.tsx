@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../config";
 
 import { useAuth } from "../hooks/useAuth.tsx"; // ✅ Import useAuth
 
@@ -53,7 +54,7 @@ const AppointmentBooking: React.FC = () => {
     setLoading(true);
     setSlots([]);
     try {
-      const response = await axios.get<Slot[]>("http://localhost:8000/api/slots", {
+      const response = await axios.get<Slot[]>(`${API_BASE}/slots`, {
         params: { date: selectedDate, appointment_type_id: serviceId },
       });
       setSlots(response.data);
@@ -73,7 +74,7 @@ const AppointmentBooking: React.FC = () => {
     if (!selectedSlot || !customerName || !customerEmail) return;
 
     try {
-      const res = await axios.post("http://localhost:8000/api/bookings", {
+      const res = await axios.post(`${API_BASE}/bookings`, {
         appointment_type_id: serviceId,
         start_time: selectedSlot.start_time,
         customer_name: customerName,

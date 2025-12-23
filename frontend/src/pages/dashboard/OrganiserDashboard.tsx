@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import axios from "axios";
+import { API_BASE } from "../../config";
 import StatCard from "../../components/ui/StatCard";
 import Badge from "../../components/ui/Badge";
 
@@ -43,14 +44,14 @@ export default function OrganiserDashboard() {
     try {
       // Fetch services
       const servicesResponse = await axios.get<Service[]>(
-        "http://localhost:8000/api/services?published_only=false"
+        `${API_BASE}/services?published_only=false`
       );
       setServices(servicesResponse.data);
 
       // Fetch today's appointments
       const today = new Date().toISOString().split("T")[0];
       const appointmentsResponse = await axios.get(
-        `http://localhost:8000/api/admin/appointments?date_from=${today}&date_to=${today}`
+        `${API_BASE}/admin/appointments?date_from=${today}&date_to=${today}`
       );
 
       const bookings = (appointmentsResponse.data.appointments || []).map(
@@ -81,7 +82,7 @@ export default function OrganiserDashboard() {
     if (!confirm("Are you sure you want to delete this service?")) return;
 
     try {
-      await axios.delete(`http://localhost:8000/api/services/${id}`);
+      await axios.delete(`${API_BASE}/services/${id}`);
       setServices(services.filter(s => s.id !== id));
     } catch (error: any) {
       alert(error.response?.data?.detail || "Failed to delete service");

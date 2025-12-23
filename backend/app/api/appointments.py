@@ -366,11 +366,21 @@ def create_service(
     """
     Create a new service (appointment type).
     """
+    # Convert price to float if it's a string
+    price_value = None
+    if service_data.price is not None:
+        try:
+            # Remove any currency symbols and convert to float
+            price_str = str(service_data.price).replace('$', '').replace('₹', '').strip()
+            price_value = float(price_str) if price_str else None
+        except ValueError:
+            price_value = None
+    
     new_service = AppointmentType(
         name=service_data.name,
         description=service_data.description,
         duration_minutes=service_data.duration_minutes,
-        price=service_data.price,
+        price=price_value,
         is_published=service_data.is_published,
         owner_id=None,  # Would come from auth in production
         resource_assignment_type=ResourceAssignmentType.AUTO
