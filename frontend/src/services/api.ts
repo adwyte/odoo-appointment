@@ -35,11 +35,22 @@ export interface UserStats {
   total_organisers?: number;
   total_customers?: number;
   active_users?: number;
+  total_appointments?: number;
 }
 
 export interface UsersResponse {
   users: User[];
   total: number;
+}
+
+export interface Appointment {
+  id: number;
+  customer_name: string;
+  customer_email: string;
+  service_name: string;
+  start_time: string;
+  end_time: string;
+  status: string;
 }
 
 /* =====================
@@ -161,7 +172,7 @@ export const api = {
     confirmed_count: number;
     cancelled_count: number;
     completed_count: number;
-    appointments: unknown[];
+    appointments: Appointment[];
   }> {
     const res = await fetch(`${API_BASE_URL}/api/admin/appointments`, {
       headers: authHeaders(),

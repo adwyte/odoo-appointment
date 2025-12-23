@@ -104,7 +104,7 @@ export default function AdminDashboard() {
       const [usersResponse, statsResponse, appointmentsResponse] = await Promise.all([
         api.getUsers({ limit: 5 }),
         api.getUserStats(),
-        api.getAppointments({ limit: 5 }),
+        api.getAppointments(),
       ]);
       setUsers(usersResponse.users.map(transformUser));
       setStats(statsResponse);

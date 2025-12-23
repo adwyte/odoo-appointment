@@ -41,7 +41,7 @@ const AppointmentBooking: React.FC = () => {
     }
   }, [user]);
 
-  const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
+  const [bookingSuccess, _setBookingSuccess] = useState<boolean>(false);
 
   useEffect(() => {
     if (currentStep === 2) {
