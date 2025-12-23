@@ -10,8 +10,8 @@ from typing import Optional
 from datetime import datetime
 from dotenv import load_dotenv
 from app.api import payments
-from app.database import get_db
-from app.models.models import User, UserRole, Booking, Resource
+from app.database import get_db, engine
+from app.models.models import User, UserRole, Booking, Resource, Base
 from app.api import appointments, auth, payments
 from app.core.security import create_access_token
 from app.core.deps import get_current_user
@@ -21,6 +21,11 @@ from app.services.email import send_otp_email
 RESET_OTP_STORE = {}
 
 load_dotenv()
+
+# =====================
+# CREATE DATABASE TABLES
+# =====================
+Base.metadata.create_all(bind=engine)
 
 # =====================
 # APP SETUP
